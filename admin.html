@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CHAPITO Admin — Uploader</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg:#0a0e1a;--surface:#111827;--surface2:#1c2333;--surface3:#252d3d;
+  --border:#1e2d40;--border-strong:#2a3a52;
+  --accent:#34A852;--accent2:#F4C124;--accent3:#146B5E;
+  --text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;--text4:#475569;
+  --red:#ef4444;--green:#10b981;--yellow:#F4C124;--blue:#3b82f6;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;min-height:100vh;letter-spacing:-0.005em;}
+
+/* HEADER */
+.header{
+  background:linear-gradient(135deg,#0a0e1a 0%,#0d1b2a 50%,#0a1628 100%);
+  border-bottom:1px solid var(--border);
+  padding:0 40px;
+  display:flex;align-items:center;justify-content:space-between;
+  height:82px;
+  position:sticky;top:0;z-index:100;
+}
+.brand{display:flex;flex-direction:column;gap:4px;}
+.brand-name{
+  font-size:26px;font-weight:800;letter-spacing:-0.04em;line-height:1;
+  background:linear-gradient(135deg,var(--accent) 0%,var(--accent2) 60%,var(--accent) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.brand-tagline{font-size:11px;color:var(--text3);font-weight:500;letter-spacing:0.08em;text-transform:uppercase;}
+.header-right{display:flex;align-items:center;gap:14px;}
+.admin-badge{background:linear-gradient(135deg,rgba(239,68,68,0.15),rgba(244,193,36,0.15));border:1px solid var(--red);color:var(--red);padding:5px 12px;border-radius:12px;font-size:11px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;}
+.user-email{font-size:12px;color:var(--text2);font-weight:500;}
+.btn-logout{background:transparent;border:1px solid var(--border-strong);color:var(--text2);padding:7px 14px;border-radius:8px;cursor:pointer;font-family:inherit;font-size:12px;font-weight:600;transition:all 0.2s;}
+.btn-logout:hover{border-color:var(--red);color:var(--red);}
+
+/* LOGIN SCREEN */
+.login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+.login-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:16px;
+  padding:40px 36px;width:100%;max-width:400px;
+}
+.login-brand{text-align:center;margin-bottom:28px;}
+.login-brand .name{font-size:32px;font-weight:800;letter-spacing:-0.04em;background:linear-gradient(135deg,var(--accent) 0%,var(--accent2) 60%,var(--accent) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.login-brand .sub{font-size:12px;color:var(--text3);font-weight:500;letter-spacing:0.08em;text-transform:uppercase;margin-top:6px;}
+.login-title{font-size:15px;font-weight:600;color:var(--text);margin-bottom:20px;text-align:center;}
+.form-group{margin-bottom:16px;}
+.form-label{display:block;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;}
+.form-input{
+  width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);
+  padding:12px 14px;border-radius:10px;font-family:inherit;font-size:14px;
+  transition:all 0.2s;
+}
+.form-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(52,168,82,0.12);}
+.btn-primary{
+  width:100%;background:linear-gradient(135deg,var(--accent),var(--accent3));border:none;color:white;
+  padding:13px 18px;border-radius:10px;font-family:inherit;font-size:14px;font-weight:700;
+  cursor:pointer;transition:all 0.2s;letter-spacing:-0.01em;
+}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(52,168,82,0.35);}
+.btn-primary:disabled{opacity:0.5;cursor:not-allowed;transform:none;}
+.login-error{background:rgba(239,68,68,0.1);border:1px solid var(--red);color:var(--red);padding:10px 14px;border-radius:8px;font-size:12px;margin-top:12px;text-align:center;}
+.login-back{text-align:center;margin-top:16px;font-size:12px;}
+.login-back a{color:var(--text3);text-decoration:none;transition:color 0.2s;}
+.login-back a:hover{color:var(--accent);}
+
+/* MAIN APP */
+.content{max-width:1200px;margin:0 auto;padding:32px 40px;}
+.step{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;margin-bottom:20px;}
+.step-header{display:flex;align-items:center;gap:12px;margin-bottom:20px;}
+.step-num{width:32px;height:32px;background:linear-gradient(135deg,var(--accent),var(--accent3));border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:14px;}
+.step-title{font-size:17px;font-weight:700;color:var(--text);letter-spacing:-0.01em;}
+.step-sub{font-size:13px;color:var(--text2);margin-left:44px;margin-top:-14px;margin-bottom:20px;}
+
+/* COMPANY SELECT */
+.company-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.company-card{
+  background:var(--surface2);border:2px solid var(--border);border-radius:12px;
+  padding:20px;cursor:pointer;text-align:center;transition:all 0.2s;
+}
+.company-card:hover{border-color:var(--border-strong);transform:translateY(-2px);}
+.company-card.selected{border-color:var(--accent);background:rgba(52,168,82,0.08);}
+.company-card .name{font-size:17px;font-weight:700;color:var(--text);letter-spacing:-0.01em;margin-bottom:4px;}
+.company-card .desc{font-size:11px;color:var(--text3);font-weight:500;}
+.company-vitaplena.selected{border-color:#34A852;}
+.company-egg.selected{border-color:#F4C124;background:rgba(244,193,36,0.08);}
+.company-hua.selected{border-color:#ec4899;background:rgba(236,72,153,0.08);}
+
+/* DROPZONE */
+.dropzone{
+  background:var(--surface2);border:2px dashed var(--border-strong);border-radius:14px;
+  padding:60px 20px;text-align:center;cursor:pointer;transition:all 0.2s;
+}
+.dropzone:hover,.dropzone.dragover{border-color:var(--accent);background:rgba(52,168,82,0.05);}
+.dropzone-icon{font-size:44px;margin-bottom:14px;opacity:0.6;}
+.dropzone-text{font-size:15px;font-weight:600;color:var(--text);margin-bottom:6px;}
+.dropzone-sub{font-size:12px;color:var(--text3);}
+#file-input{display:none;}
+.file-info{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-top:14px;display:flex;align-items:center;gap:14px;}
+.file-info .name{font-weight:600;flex:1;font-size:13px;}
+.file-info .size{font-size:12px;color:var(--text3);}
+.btn-remove{background:transparent;border:1px solid var(--border);color:var(--text3);padding:5px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-family:inherit;}
+.btn-remove:hover{border-color:var(--red);color:var(--red);}
+
+/* LOADING & MESSAGES */
+.loading{display:flex;align-items:center;gap:12px;color:var(--text2);font-size:13px;margin-top:16px;}
+.spinner-sm{width:20px;height:20px;border:2px solid var(--surface2);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.step.disabled{opacity:0.4;pointer-events:none;}
+
+/* MINI STATS */
+.mini-stat{
+  background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--accent);
+  border-radius:10px;padding:12px 14px;
+}
+.ms-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;font-weight:700;margin-bottom:6px;}
+.ms-val{font-size:22px;font-weight:700;color:var(--text);letter-spacing:-0.02em;line-height:1;}
+.ms-sub{font-size:11px;color:var(--text2);margin-top:4px;font-weight:500;}
+
+/* ENTITIES SECTION */
+.entities-summary{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;}
+.es-item{flex:1;min-width:180px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text2);}
+.es-item.es-ok{border-left:3px solid var(--accent);}
+.es-item.es-warn{border-left:3px solid var(--accent2);}
+.es-item strong{color:var(--text);font-size:16px;font-weight:700;}
+.es-icon{font-size:18px;}
+.entities-note{background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.3);border-radius:8px;padding:11px 14px;font-size:12.5px;color:var(--text2);margin-bottom:18px;line-height:1.5;}
+.entities-section{margin-bottom:24px;}
+.entities-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px;letter-spacing:-0.005em;}
+.entities-hint{font-size:12px;color:var(--text3);margin-bottom:12px;}
+.entities-ok{background:rgba(52,168,82,0.08);border:1px solid var(--accent);border-radius:10px;padding:16px;text-align:center;color:var(--accent);font-weight:600;margin-bottom:18px;}
+.entities-actions{display:flex;justify-content:center;margin-top:22px;}
+.table-scroll{overflow-x:auto;background:var(--surface2);border:1px solid var(--border);border-radius:10px;}
+.editable-table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:800px;}
+.editable-table th{background:var(--surface3);color:var(--text3);font-weight:700;text-align:left;padding:10px 12px;text-transform:uppercase;font-size:10px;letter-spacing:0.05em;border-bottom:1px solid var(--border);white-space:nowrap;}
+.editable-table td{padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.03);vertical-align:middle;}
+.editable-table tr:last-child td{border-bottom:none;}
+.col-cust{max-width:220px;}
+.col-num{color:var(--text3);font-weight:600;text-align:right;padding-right:16px;white-space:nowrap;}
+.edit-input{background:var(--surface);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;font-family:inherit;font-size:12px;width:100%;min-width:120px;}
+.edit-input.num{min-width:80px;max-width:100px;}
+.edit-input:focus{outline:none;border-color:var(--accent);}
+select.edit-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%2394a3b8'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;padding-right:24px;}
+
+/* CONFIRM STEP */
+.confirm-summary{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:22px;}
+.cs-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:16px;letter-spacing:-0.005em;}
+.cs-grid{display:grid;gap:0;background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:20px;}
+.cs-row{display:flex;justify-content:space-between;padding:11px 16px;border-bottom:1px solid var(--border);align-items:center;}
+.cs-row:last-child{border-bottom:none;}
+.cs-lbl{font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;font-weight:600;}
+.cs-val{font-size:13px;color:var(--text);font-weight:500;text-align:right;}
+.cs-actions-block{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin-bottom:16px;}
+.cs-actions-title{font-size:12px;font-weight:700;color:var(--text2);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.05em;}
+.cs-actions-list{list-style:none;padding:0;}
+.cs-actions-list li{padding:7px 0;font-size:13px;color:var(--text);display:flex;align-items:center;gap:10px;}
+.cs-actions-list li code{background:var(--surface2);padding:2px 8px;border-radius:5px;font-family:'Menlo',monospace;font-size:11.5px;color:var(--accent);}
+.cs-badge{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:6px;font-weight:700;font-size:12px;font-family:'Menlo',monospace;}
+.cs-badge.new{background:rgba(52,168,82,0.18);color:var(--accent);}
+.cs-badge.ins{background:rgba(99,102,241,0.18);color:#8b8ff5;}
+.cs-badge.log{background:rgba(244,193,36,0.18);color:var(--accent2);}
+.cs-warn{background:rgba(244,193,36,0.08);border:1px solid rgba(244,193,36,0.35);border-radius:8px;padding:11px 14px;font-size:12.5px;color:var(--text2);margin-bottom:20px;line-height:1.5;}
+.cs-buttons{display:flex;gap:12px;justify-content:space-between;align-items:center;}
+.btn-secondary{background:transparent;border:1px solid var(--border-strong);color:var(--text2);padding:12px 20px;border-radius:10px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;transition:all 0.2s;}
+.btn-secondary:hover{border-color:var(--text2);color:var(--text);}
+
+/* PROGRESS LOG */
+.progress-log{margin-top:20px;background:#0d1421;border:1px solid var(--border);border-radius:10px;padding:14px 16px;max-height:280px;overflow-y:auto;font-family:'Menlo',monospace;font-size:12px;line-height:1.7;}
+.log-line{color:var(--text2);}
+.log-ok{color:var(--accent);}
+.log-err{color:var(--red);}
+.log-warn{color:var(--accent2);}
+.spinner-btn{display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin 0.8s linear infinite;margin-right:6px;vertical-align:middle;}
+
+/* SUCCESS SCREEN */
+.success-screen{text-align:center;padding:40px 20px;}
+.success-icon{font-size:64px;margin-bottom:16px;}
+.success-title{font-size:28px;font-weight:800;color:var(--text);letter-spacing:-0.03em;margin-bottom:6px;}
+.success-sub{font-size:13px;color:var(--text3);margin-bottom:32px;}
+.success-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;max-width:800px;margin:0 auto 32px;}
+.ss-item{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px 18px;}
+.ss-val{font-size:28px;font-weight:800;color:var(--accent);letter-spacing:-0.02em;line-height:1;margin-bottom:8px;}
+.ss-lbl{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;font-weight:700;}
+.success-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}
+</style>
+</head>
+<body>
+
+<!-- ============================================================ -->
+<!-- LOGIN SCREEN -->
+<!-- ============================================================ -->
+<div id="login-screen" class="login-screen">
+  <div class="login-card">
+    <div class="login-brand">
+      <div class="name">CHAPITO</div>
+      <div class="sub">Admin Console</div>
+    </div>
+    <div class="login-title">Iniciar sesión para subir data</div>
+    
+    <div class="form-group">
+      <label class="form-label" for="email">Email</label>
+      <input type="email" id="email" class="form-input" placeholder="tu@email.com" autocomplete="username">
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="password">Contraseña</label>
+      <input type="password" id="password" class="form-input" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="btn-primary" onclick="handleLogin()" id="login-btn">Entrar</button>
+    <div id="login-error" class="login-error" style="display:none"></div>
+    <div class="login-back">
+      <a href="index.html">← Volver al dashboard</a>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- MAIN APP (hidden until logged in) -->
+<!-- ============================================================ -->
+<div id="admin-app" style="display:none">
+  <header class="header">
+    <div class="brand">
+      <div class="brand-name">CHAPITO</div>
+      <div class="brand-tagline">Admin Console — Data Uploader</div>
+    </div>
+    <div class="header-right">
+      <span class="admin-badge">🔒 Admin</span>
+      <span class="user-email" id="user-email">—</span>
+      <button class="btn-logout" onclick="handleLogout()">Cerrar sesión</button>
+    </div>
+  </header>
+
+  <div class="content">
+    <!-- Step 1: Company -->
+    <div class="step" id="step-1">
+      <div class="step-header">
+        <div class="step-num">1</div>
+        <div class="step-title">Seleccionar Compañía</div>
+      </div>
+      <div class="step-sub">¿A qué empresa pertenece la data del Excel?</div>
+      <div class="company-grid">
+        <div class="company-card company-vitaplena" onclick="selectCompany('Vitaplena')">
+          <div class="name">Vitaplena</div>
+          <div class="desc">Distribución CPG</div>
+        </div>
+        <div class="company-card company-egg" onclick="selectCompany('Egg Market')">
+          <div class="name">Egg Market</div>
+          <div class="desc">Huevos</div>
+        </div>
+        <div class="company-card company-hua" onclick="selectCompany('Hua Xing')">
+          <div class="name">Hua Xing</div>
+          <div class="desc">Productos Asiáticos</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: Upload File -->
+    <div class="step disabled" id="step-2">
+      <div class="step-header">
+        <div class="step-num">2</div>
+        <div class="step-title">Subir archivo Excel</div>
+      </div>
+      <div class="step-sub">Arrastra el archivo .xlsx exportado de NetSuite (o haz click para seleccionarlo)</div>
+      <div class="dropzone" id="dropzone" onclick="document.getElementById('file-input').click()">
+        <div class="dropzone-icon">📊</div>
+        <div class="dropzone-text">Arrastra el Excel aquí</div>
+        <div class="dropzone-sub">o click para seleccionar</div>
+      </div>
+      <input type="file" id="file-input" accept=".xlsx,.xls" onchange="handleFileSelect(event.target.files[0])">
+      <div id="file-info-container"></div>
+    </div>
+
+    <!-- Step 3: Preview & Classify (placeholder for now) -->
+    <div class="step disabled" id="step-3">
+      <div class="step-header">
+        <div class="step-num">3</div>
+        <div class="step-title">Revisar y clasificar</div>
+      </div>
+      <div class="step-sub">Aquí aparecerán clientes y SKUs nuevos para clasificar</div>
+      <div id="preview-container" style="color:var(--text3);font-size:13px;">Espera al Paso 2...</div>
+    </div>
+
+    <!-- Step 4: Confirm (placeholder) -->
+    <div class="step disabled" id="step-4">
+      <div class="step-header">
+        <div class="step-num">4</div>
+        <div class="step-title">Confirmar y subir a Supabase</div>
+      </div>
+      <div class="step-sub">Revisión final antes de escribir en la base de datos</div>
+      <div id="confirm-container" style="color:var(--text3);font-size:13px;">Espera al Paso 3...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// SUPABASE CONFIG
+// ============================================================
+const SUPABASE_URL = 'https://ejkvymlezbqvzsmwejca.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVqa3Z5bWxlemJxdnpzbXdlamNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI4MjgwMjgsImV4cCI6MjA5ODQwNDAyOH0.yqcHHIoXg1N4kRXAhFboZ6M3W01cpFAKrvFC1w2AqKc';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ============================================================
+// STATE
+// ============================================================
+let selectedCompany = null;
+let uploadedFile = null;
+let parsedRows = [];
+let existingCustomers = {}; // name → {chain, category, channel, primary_rep, status}
+let existingSKUs = {};      // sku → {item_name, brand, landed_cost, ...}
+let existingReps = [];
+let newCustomerClassifications = {}; // customer_name → {chain, category, channel, primary_rep, status}
+let newSKUData = {};                  // sku → {item_name, brand, landed_cost, case_pack, active}
+
+// Sugerencias inteligentes basadas en el patrón del customer name
+function suggestClassification(customerName){
+  const n = customerName.toLowerCase();
+  const suggest = {chain: customerName, category: "Otros", channel: "Grocery", status: "Active"};
+  
+  // Ralph's Food Warehouse
+  if (n.includes("ralph") && n.includes("food warehouse")){
+    suggest.chain = "Ralph's Food Warehouse";
+    suggest.category = "Supermercados";
+    suggest.channel = "Grocery";
+  }
+  // Supermax
+  else if (n.startsWith("supermax") && !n.startsWith("supermax dc") && !n.startsWith("deli-supermax")){
+    suggest.chain = "Supermax";
+    suggest.category = "Supermercados";
+    suggest.channel = "Grocery";
+  }
+  // Deli-Supermax
+  else if (n.startsWith("deli-supermax") || n.startsWith("deli supermax")){
+    suggest.chain = "Supermax";
+    suggest.category = "Supermercados";
+    suggest.channel = "Deli";
+  }
+  // Pueblo (incl Pueblo Plaza)
+  else if (n.startsWith("pueblo") && !n.startsWith("deli-pueblo") && !n.startsWith("deli pueblo")){
+    suggest.chain = "Pueblo";
+    suggest.category = "Supermercados";
+    suggest.channel = "Grocery";
+  }
+  else if (n.startsWith("deli-pueblo") || n.startsWith("deli pueblo")){
+    suggest.chain = "Pueblo";
+    suggest.category = "Supermercados";
+    suggest.channel = "Deli";
+  }
+  // Econo
+  else if (n.startsWith("econo")){
+    suggest.chain = "Econo";
+    suggest.category = "Supermercados";
+    suggest.channel = "Grocery";
+  }
+  // Selectos
+  else if (n.startsWith("selectos") || n.includes("selectos")){
+    suggest.chain = "Selectos";
+    suggest.category = "Supermercados";
+    suggest.channel = "Grocery";
+  }
+  // Amigo
+  else if (n.startsWith("amigo") && !n.startsWith("deli-amigo") && !n.startsWith("deli amigo")){
+    suggest.chain = "Amigo";
+    suggest.category = "Supermercados";
+    suggest.channel = "Grocery";
+  }
+  else if (n.startsWith("deli-amigo") || n.startsWith("deli amigo")){
+    suggest.chain = "Amigo";
+    suggest.category = "Supermercados";
+    suggest.channel = "Deli";
+  }
+  // Sam's Club
+  else if (n.includes("sam") && n.includes("club")){
+    suggest.chain = "Sam's Club";
+    suggest.category = "Club";
+    suggest.channel = "Grocery";
+  }
+  // Costco
+  else if (n.startsWith("costco")){
+    suggest.chain = "Costco";
+    suggest.category = "Club";
+    suggest.channel = "Grocery";
+  }
+  // Walmart
+  else if (n.startsWith("walmart") || n.startsWith("wal-mart")){
+    suggest.chain = "Walmart";
+    suggest.category = "Mass Market";
+    suggest.channel = "Grocery";
+  }
+  // Colmado
+  else if (n.includes("colmado")){
+    suggest.chain = "Independiente";
+    suggest.category = "Colmado";
+    suggest.channel = "Grocery";
+  }
+  // Centro Natural
+  else if (n.startsWith("centro natural") || n.includes("centro natural")){
+    suggest.chain = "Centro Natural";
+    suggest.category = "Health Food";
+    suggest.channel = "Grocery";
+  }
+  // La Hacienda
+  else if (n.startsWith("la hacienda")){
+    suggest.chain = "La Hacienda";
+    suggest.category = "Specialty Store";
+    suggest.channel = "Grocery";
+  }
+  // Farmacias
+  else if (n.includes("farmacia")){
+    suggest.chain = customerName;
+    suggest.category = "Farmacias";
+    suggest.channel = "Grocery";
+  }
+  
+  return suggest;
+}
+
+async function loadExistingData(){
+  try {
+    // Customers
+    let {data:custs, error:e1} = await sb.from('customers').select('*');
+    if (e1) throw e1;
+    custs.forEach(c => { existingCustomers[c.customer_name.trim()] = c; });
+    existingReps = [...new Set(custs.map(c=>c.primary_rep).filter(x=>x))].sort();
+    
+    // SKUs de la empresa seleccionada
+    let {data:skus, error:e2} = await sb.from('skus').select('*').eq('company', selectedCompany);
+    if (e2) throw e2;
+    skus.forEach(s => { existingSKUs[s.sku.trim()] = s; });
+  } catch (err) {
+    console.error("Error loading existing data:", err);
+    throw err;
+  }
+}
+
+const CATEGORIES = ["Supermercados","Club","Mass Market","Reposteria","Otros","Specialty Store","Restaurante","Panadería","Health Food","Farmacias","Convenience Store","Colmado","Meal Prep","Coffee Shop / Cafetería"];
+const CHANNELS = ["Grocery","Deli","Food Service"];
+const STATUSES = ["Active","Dormant"];
+const BRANDS = ["Lakanto","Impact","Palmini","Nekstella","Töst","Green Cola","Other"];
+
+// ============================================================
+// SESSION CHECK
+// ============================================================
+async function checkSession(){
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    showAdmin(session);
+  } else {
+    showLogin();
+  }
+}
+
+function showLogin(){
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('admin-app').style.display = 'none';
+}
+
+function showAdmin(session){
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('admin-app').style.display = 'block';
+  document.getElementById('user-email').textContent = session.user.email;
+}
+
+// ============================================================
+// LOGIN
+// ============================================================
+async function handleLogin(){
+  const btn = document.getElementById('login-btn');
+  const errBox = document.getElementById('login-error');
+  const email = document.getElementById('email').value.trim();
+  const pw = document.getElementById('password').value;
+  errBox.style.display = 'none';
+  
+  if (!email || !pw) {
+    errBox.textContent = 'Ingresa email y contraseña.';
+    errBox.style.display = 'block';
+    return;
+  }
+  
+  btn.disabled = true;
+  btn.textContent = 'Entrando...';
+  
+  try {
+    const { data, error } = await sb.auth.signInWithPassword({ email, password: pw });
+    if (error) throw error;
+    showAdmin(data.session);
+  } catch (err) {
+    errBox.textContent = 'Error: ' + (err.message || err);
+    errBox.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Entrar';
+  }
+}
+
+async function handleLogout(){
+  await sb.auth.signOut();
+  window.location.reload();
+}
+
+// Enter key for login
+document.getElementById('password').addEventListener('keypress', e => {
+  if (e.key === 'Enter') handleLogin();
+});
+document.getElementById('email').addEventListener('keypress', e => {
+  if (e.key === 'Enter') document.getElementById('password').focus();
+});
+
+// ============================================================
+// STEP 1: COMPANY SELECT
+// ============================================================
+function selectCompany(name){
+  selectedCompany = name;
+  document.querySelectorAll('.company-card').forEach(c => c.classList.remove('selected'));
+  event.currentTarget.classList.add('selected');
+  document.getElementById('step-2').classList.remove('disabled');
+}
+
+// ============================================================
+// STEP 2: FILE UPLOAD (skeleton — parseo se agrega después)
+// ============================================================
+const dropzone = document.getElementById('dropzone');
+dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('dragover'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+dropzone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropzone.classList.remove('dragover');
+  if (e.dataTransfer.files[0]) handleFileSelect(e.dataTransfer.files[0]);
+});
+
+function handleFileSelect(file){
+  if (!file) return;
+  uploadedFile = file;
+  document.getElementById('file-info-container').innerHTML = `
+    <div class="file-info">
+      <span>📊</span>
+      <span class="name">${file.name}</span>
+      <span class="size">${(file.size/1024).toFixed(1)} KB</span>
+      <button class="btn-remove" onclick="removeFile()">✕ Quitar</button>
+    </div>
+    <div class="loading" id="parsing-status">
+      <div class="spinner-sm"></div>
+      <span>Parseando archivo...</span>
+    </div>
+  `;
+  parseExcel(file);
+}
+
+function removeFile(){
+  uploadedFile = null;
+  parsedRows = [];
+  document.getElementById('file-info-container').innerHTML = '';
+  document.getElementById('step-3').classList.add('disabled');
+  document.getElementById('preview-container').innerHTML = 'Espera al Paso 2...';
+}
+
+// ============================================================
+// TYPOS CONOCIDOS (aplicados automáticamente)
+// ============================================================
+const KNOWN_TYPOS = {
+  "Ralph s Food Warehouse Humacao": "Ralph's Food Warehouse Humacao",
+  "Pueblo Aguadilla Shopping Center #985": "Pueblo Aguadilla Shopping Center #955",
+  "Deli Pueblo Las Américas": "Deli-Pueblo Las Américas #161",
+  "Econo Canóvanas": "Econo Rial Canóvanas",
+  "Deli Pueblo Monte Mall": "Deli-Pueblo Monte Mall #115",
+  "Pueblo Plaza Las Americas #116": "Pueblo Plaza Las Americas #161"
+};
+
+// Column name variations (Q1 vs Q2 vs future)
+const COLUMN_MAP = {
+  invoice: ["Invoice", "Invoice Number", "Num"],
+  date: ["Invoice Date", "Invocie Date", "Transaction date"],
+  ship_date: ["Ship date", "Ship Date"],
+  customer: ["Customer full name", "Customer"],
+  sku: ["SKU", "Item SKU"],
+  qty: ["Quantity", "Qty"],
+  amount: ["Amount"],
+  rep: ["Sales Rep", "Rep"]
+};
+
+function findColumn(row, aliases){
+  for (const a of aliases) if (a in row) return a;
+  return null;
+}
+
+// Estado global de análisis
+let analysis = null;
+
+async function parseExcel(file){
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const workbook = XLSX.read(e.target.result, {type:'array', cellDates:true});
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const raw = XLSX.utils.sheet_to_json(sheet, {defval:'', raw:false});
+      
+      if (!raw.length){
+        throw new Error("Archivo vacío");
+      }
+      
+      // Detectar columnas
+      const first = raw[0];
+      const cols = {};
+      for (const key in COLUMN_MAP){
+        cols[key] = findColumn(first, COLUMN_MAP[key]);
+      }
+      const missing = Object.entries(cols).filter(([k,v]) => !v && k!=='ship_date').map(([k])=>k);
+      if (missing.length){
+        throw new Error("Faltan columnas: " + missing.join(", ") + ". Detectadas: " + Object.keys(first).join(", "));
+      }
+      
+      // Normalizar cada fila
+      parsedRows = raw.map(r => ({
+        invoice: String(r[cols.invoice]||"").trim(),
+        date: String(r[cols.date]||"").trim(),
+        ship_date: cols.ship_date ? String(r[cols.ship_date]||"").trim() : "",
+        customer: String(r[cols.customer]||"").trim(),
+        sku: String(r[cols.sku]||"").trim(),
+        qty: Number(r[cols.qty]) || 0,
+        amount: parseAmount(r[cols.amount]),
+        rep: String(r[cols.rep]||"").trim()
+      })).filter(r => r.invoice && r.customer);
+      
+      // Aplicar typos conocidos
+      let typosApplied = 0;
+      parsedRows.forEach(r => {
+        if (KNOWN_TYPOS[r.customer]){
+          r.customer = KNOWN_TYPOS[r.customer];
+          typosApplied++;
+        }
+      });
+      
+      // Clasificar cada fila (4 tipos: normal / void / sample / credit)
+      parsedRows.forEach(r => {
+        if (r.qty < 0 || r.amount < 0){
+          r.tipo = 'credit';
+        } else if (r.qty === 0 && r.amount === 0){
+          r.tipo = 'void';
+        } else if (r.customer === 'Vitaplena' && r.amount === 0){
+          r.tipo = 'sample';
+        } else {
+          r.tipo = 'normal';
+        }
+        // Parse ISO date for db (from MM/DD/YYYY)
+        r.iso_date = parseDate(r.date);
+      });
+      
+      // Contar (4 tipos)
+      const normal = parsedRows.filter(r=>r.tipo==='normal');
+      const voids = parsedRows.filter(r=>r.tipo==='void');
+      const samples = parsedRows.filter(r=>r.tipo==='sample');
+      const credits = parsedRows.filter(r=>r.tipo==='credit');
+      // Para revenue net: normal + credit
+      const revenueRows = [...normal, ...credits];
+      const months = [...new Set(revenueRows.map(r=>r.iso_date?r.iso_date.slice(0,7):"").filter(x=>x))].sort();
+      const revenueGross = normal.reduce((s,r)=>s+r.amount, 0);
+      const creditAmount = credits.reduce((s,r)=>s+r.amount, 0);
+      const revenueNet = revenueGross + creditAmount; // credits are negative
+      const cases = normal.reduce((s,r)=>s+r.qty, 0);
+      const orders = new Set(revenueRows.map(r=>r.invoice)).size;
+      
+      analysis = {
+        totalRows: parsedRows.length,
+        normalRows: normal.length,
+        voidRows: voids.length,
+        voidInvoices: new Set(voids.map(r=>r.invoice)).size,
+        sampleRows: samples.length,
+        creditRows: credits.length,
+        creditAmount: creditAmount,
+        typosApplied: typosApplied,
+        months: months,
+        revenueGross: revenueGross,
+        revenueNet: revenueNet,
+        cases: cases,
+        orders: orders,
+        columnsDetected: cols
+      };
+      
+      displayAnalysis();
+      document.getElementById('step-3').classList.remove('disabled');
+    } catch (err) {
+      document.getElementById('parsing-status').innerHTML = `<span style="color:var(--red)">❌ Error: ${err.message}</span>`;
+      console.error(err);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function parseAmount(v){
+  if (typeof v === 'number') return v;
+  if (!v) return 0;
+  const s = String(v).replace(/[$,]/g, "").trim();
+  const n = parseFloat(s);
+  return isNaN(n) ? 0 : n;
+}
+
+function parseDate(str){
+  // MM/DD/YYYY → YYYY-MM-DD
+  if (!str || str === 'N/A') return null;
+  const m = String(str).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (!m) return null;
+  const [_, mm, dd, yyyy] = m;
+  return `${yyyy}-${mm.padStart(2,"0")}-${dd.padStart(2,"0")}`;
+}
+
+function displayAnalysis(){
+  const a = analysis;
+  const fmt$ = n => "$"+n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+  const monthLabels = a.months.map(m => {
+    const [y,mo] = m.split("-");
+    const names = ["","Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+    return names[parseInt(mo)];
+  }).join(", ");
+  
+  document.getElementById('parsing-status').innerHTML = `
+    <span style="color:var(--accent);font-weight:600">✓ Archivo parseado y clasificado</span>
+  `;
+  
+  document.getElementById('preview-container').innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:20px;">
+      <div class="mini-stat" style="border-left-color:var(--accent)"><div class="ms-label">Ventas normales</div><div class="ms-val">${a.normalRows.toLocaleString()}</div><div class="ms-sub">${fmt$(a.revenueGross)} gross</div></div>
+      <div class="mini-stat" style="border-left-color:#ef4444"><div class="ms-label">Créditos</div><div class="ms-val">${a.creditRows}</div><div class="ms-sub">${fmt$(a.creditAmount)}</div></div>
+      <div class="mini-stat" style="border-left-color:#f97316"><div class="ms-label">Voids (canceladas)</div><div class="ms-val">${a.voidRows}</div><div class="ms-sub">${a.voidInvoices} facturas</div></div>
+      <div class="mini-stat" style="border-left-color:var(--yellow)"><div class="ms-label">Muestras</div><div class="ms-val">${a.sampleRows}</div><div class="ms-sub">Marketing spend</div></div>
+      <div class="mini-stat" style="border-left-color:#10b981"><div class="ms-label">Revenue NET</div><div class="ms-val">${fmt$(a.revenueNet)}</div><div class="ms-sub">${a.cases.toLocaleString()} cajas · ${a.orders} órdenes</div></div>
+      <div class="mini-stat" style="border-left-color:#6366f1"><div class="ms-label">Meses / Typos</div><div class="ms-val" style="font-size:15px">${monthLabels||"—"}</div><div class="ms-sub">${a.typosApplied} typos corregidos</div></div>
+    </div>
+    <div id="new-entities-container"></div>
+  `;
+  
+  // Cargar data existente y detectar entities nuevos
+  detectNewEntities();
+}
+
+async function detectNewEntities(){
+  const container = document.getElementById('new-entities-container');
+  container.innerHTML = `<div class="loading"><div class="spinner-sm"></div><span>Buscando customers y SKUs nuevos en la BD...</span></div>`;
+  
+  try {
+    await loadExistingData();
+    
+    // Detectar customers nuevos (excluye samples porque customer='Vitaplena')
+    const custInFile = [...new Set(parsedRows.filter(r=>r.tipo!=='sample').map(r=>r.customer))];
+    const newCusts = custInFile.filter(c => !(c in existingCustomers));
+    
+    // Detectar SKUs nuevos (excluye voids, incluye samples y credits)
+    const skusInFile = [...new Set(parsedRows.filter(r=>r.tipo!=='void').map(r=>r.sku).filter(x=>x))];
+    const newSkus = skusInFile.filter(s => !(s in existingSKUs));
+    
+    // Detectar reps nuevos
+    const repsInFile = [...new Set(parsedRows.filter(r=>r.tipo!=='sample').map(r=>r.rep).filter(x=>x))];
+    const newReps = repsInFile.filter(r => !existingReps.includes(r));
+    
+    // Pre-poblar sugerencias
+    newCusts.forEach(c => {
+      const s = suggestClassification(c);
+      // Auto-asignar primary_rep basado en quien más le vende
+      const salesForCust = parsedRows.filter(r => r.customer === c && r.tipo === 'normal');
+      const repCounts = {};
+      salesForCust.forEach(r => { if(r.rep) repCounts[r.rep] = (repCounts[r.rep]||0) + 1; });
+      const topRep = Object.entries(repCounts).sort((a,b)=>b[1]-a[1])[0];
+      s.primary_rep = topRep ? topRep[0] : '';
+      newCustomerClassifications[c] = s;
+    });
+    
+    newSkus.forEach(s => {
+      newSKUData[s] = {item_name: s, brand: 'Other', landed_cost: 0, case_pack: 1, active: true};
+    });
+    
+    renderNewEntitiesUI(newCusts, newSkus, newReps);
+  } catch (err) {
+    container.innerHTML = `<div style="color:var(--red);font-size:13px;padding:14px;background:rgba(239,68,68,0.08);border-radius:8px;border:1px solid var(--red);">❌ Error cargando data: ${err.message}</div>`;
+  }
+}
+
+function renderNewEntitiesUI(newCusts, newSkus, newReps){
+  const container = document.getElementById('new-entities-container');
+  let html = '';
+  
+  // Summary bar
+  html += `<div class="entities-summary">`;
+  html += `<div class="es-item ${newCusts.length?'es-warn':'es-ok'}"><span class="es-icon">👥</span><span><strong>${newCusts.length}</strong> customers nuevos</span></div>`;
+  html += `<div class="es-item ${newSkus.length?'es-warn':'es-ok'}"><span class="es-icon">📦</span><span><strong>${newSkus.length}</strong> SKUs nuevos</span></div>`;
+  html += `<div class="es-item ${newReps.length?'es-warn':'es-ok'}"><span class="es-icon">👤</span><span><strong>${newReps.length}</strong> reps nuevos</span></div>`;
+  html += `</div>`;
+  
+  if (newReps.length){
+    html += `<div class="entities-note">💡 <strong>Reps nuevos detectados:</strong> ${newReps.join(', ')}. No requieren clasificación adicional (se guardan tal cual en cada venta).</div>`;
+  }
+  
+  // Tabla editable de customers nuevos
+  if (newCusts.length){
+    html += `<div class="entities-section">`;
+    html += `<div class="entities-title">🏢 Clasificar ${newCusts.length} customers nuevos</div>`;
+    html += `<div class="entities-hint">Las clasificaciones se auto-sugieren según el nombre. Edita si es necesario.</div>`;
+    html += `<div class="table-scroll"><table class="editable-table">`;
+    html += `<thead><tr><th>Cliente</th><th># Filas</th><th>Chain</th><th>Categoría</th><th>Departamento</th><th>Rep Principal</th><th>Status</th></tr></thead><tbody>`;
+    newCusts.sort((a,b)=>a.localeCompare(b)).forEach(c => {
+      const s = newCustomerClassifications[c];
+      const n = parsedRows.filter(r => r.customer === c && r.tipo === 'normal').length;
+      html += `<tr>`;
+      html += `<td class="col-cust"><strong>${c}</strong></td>`;
+      html += `<td class="col-num">${n}</td>`;
+      html += `<td><input type="text" value="${s.chain||''}" onchange="updateClassification('${escapeAttr(c)}','chain',this.value)" class="edit-input"></td>`;
+      html += `<td>${categorySelect(c, s.category)}</td>`;
+      html += `<td>${channelSelect(c, s.channel)}</td>`;
+      html += `<td>${repSelect(c, s.primary_rep)}</td>`;
+      html += `<td>${statusSelect(c, s.status)}</td>`;
+      html += `</tr>`;
+    });
+    html += `</tbody></table></div></div>`;
+  }
+  
+  // Tabla editable de SKUs nuevos
+  if (newSkus.length){
+    html += `<div class="entities-section">`;
+    html += `<div class="entities-title">📦 Registrar ${newSkus.length} SKUs nuevos</div>`;
+    html += `<div class="entities-hint">Necesitamos landed cost y brand para calcular GP.</div>`;
+    html += `<div class="table-scroll"><table class="editable-table">`;
+    html += `<thead><tr><th>SKU</th><th>Item Name</th><th>Brand</th><th>Landed Cost ($/case)</th><th>Case Pack</th></tr></thead><tbody>`;
+    newSkus.sort().forEach(s => {
+      const d = newSKUData[s];
+      html += `<tr>`;
+      html += `<td class="col-cust"><strong>${s}</strong></td>`;
+      html += `<td><input type="text" value="${d.item_name}" onchange="updateSKU('${escapeAttr(s)}','item_name',this.value)" class="edit-input"></td>`;
+      html += `<td>${brandSelect(s, d.brand)}</td>`;
+      html += `<td><input type="number" step="0.01" value="${d.landed_cost}" onchange="updateSKU('${escapeAttr(s)}','landed_cost',parseFloat(this.value)||0)" class="edit-input num"></td>`;
+      html += `<td><input type="number" value="${d.case_pack}" onchange="updateSKU('${escapeAttr(s)}','case_pack',parseInt(this.value)||1)" class="edit-input num"></td>`;
+      html += `</tr>`;
+    });
+    html += `</tbody></table></div></div>`;
+  }
+  
+  // Ready state
+  if (!newCusts.length && !newSkus.length){
+    html += `<div class="entities-ok">✅ No hay customers ni SKUs nuevos. Todo listo para subir.</div>`;
+  }
+  
+  html += `<div class="entities-actions"><button class="btn-primary" onclick="proceedToUpload()" style="max-width:280px">Continuar al Paso 4 →</button></div>`;
+  
+  container.innerHTML = html;
+}
+
+function escapeAttr(s){ return String(s).replace(/'/g,"&#39;").replace(/"/g,"&quot;"); }
+
+function categorySelect(customer, current){
+  return `<select onchange="updateClassification('${escapeAttr(customer)}','category',this.value)" class="edit-input">
+    ${CATEGORIES.map(c => `<option value="${c}" ${c===current?'selected':''}>${c}</option>`).join('')}
+  </select>`;
+}
+function channelSelect(customer, current){
+  return `<select onchange="updateClassification('${escapeAttr(customer)}','channel',this.value)" class="edit-input">
+    ${CHANNELS.map(c => `<option value="${c}" ${c===current?'selected':''}>${c}</option>`).join('')}
+  </select>`;
+}
+function repSelect(customer, current){
+  return `<select onchange="updateClassification('${escapeAttr(customer)}','primary_rep',this.value)" class="edit-input">
+    <option value="">— sin asignar —</option>
+    ${existingReps.map(r => `<option value="${r}" ${r===current?'selected':''}>${r}</option>`).join('')}
+    ${current && !existingReps.includes(current) ? `<option value="${current}" selected>${current} (nuevo)</option>` : ''}
+  </select>`;
+}
+function statusSelect(customer, current){
+  return `<select onchange="updateClassification('${escapeAttr(customer)}','status',this.value)" class="edit-input">
+    ${STATUSES.map(s => `<option value="${s}" ${s===current?'selected':''}>${s}</option>`).join('')}
+  </select>`;
+}
+function brandSelect(sku, current){
+  return `<select onchange="updateSKU('${escapeAttr(sku)}','brand',this.value)" class="edit-input">
+    ${BRANDS.map(b => `<option value="${b}" ${b===current?'selected':''}>${b}</option>`).join('')}
+  </select>`;
+}
+function updateClassification(customer, field, value){
+  if (!newCustomerClassifications[customer]) newCustomerClassifications[customer] = {};
+  newCustomerClassifications[customer][field] = value;
+}
+function updateSKU(sku, field, value){
+  if (!newSKUData[sku]) newSKUData[sku] = {};
+  newSKUData[sku][field] = value;
+}
+
+function proceedToUpload(){
+  document.getElementById('step-4').classList.remove('disabled');
+  renderConfirmStep();
+  document.getElementById('step-4').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function renderConfirmStep(){
+  const a = analysis;
+  const fmt$ = n => "$"+n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+  
+  // Contar operaciones que se van a hacer (ya no excluimos muestras)
+  const newCustsCount = Object.keys(newCustomerClassifications).length;
+  const newSkusCount = Object.keys(newSKUData).length;
+  const salesToInsert = parsedRows.length; // AHORA incluimos TODO (normal + void + sample + credit)
+  const uniqueOrders = new Set(parsedRows.map(r=>r.invoice)).size;
+  
+  // Determinar rango de fechas
+  const dates = parsedRows.filter(r=>r.iso_date).map(r=>r.iso_date).sort();
+  const dateStart = dates[0] || "—";
+  const dateEnd = dates[dates.length-1] || "—";
+  
+  document.getElementById('confirm-container').innerHTML = `
+    <div class="confirm-summary">
+      <div class="cs-title">📋 Resumen antes de escribir a Supabase</div>
+      <div class="cs-grid">
+        <div class="cs-row"><span class="cs-lbl">Compañía</span><span class="cs-val" style="color:var(--accent);font-weight:700">${selectedCompany}</span></div>
+        <div class="cs-row"><span class="cs-lbl">Archivo</span><span class="cs-val">${uploadedFile.name}</span></div>
+        <div class="cs-row"><span class="cs-lbl">Período</span><span class="cs-val">${dateStart} → ${dateEnd}</span></div>
+        <div class="cs-row"><span class="cs-lbl">Ventas normales</span><span class="cs-val"><strong>${a.normalRows.toLocaleString()}</strong> filas · ${fmt$(a.revenueGross)} gross</span></div>
+        <div class="cs-row"><span class="cs-lbl">Créditos</span><span class="cs-val" style="color:#ef4444">${a.creditRows} filas · ${fmt$(a.creditAmount)}</span></div>
+        <div class="cs-row"><span class="cs-lbl">Voids</span><span class="cs-val">${a.voidRows} filas (${a.voidInvoices} facturas)</span></div>
+        <div class="cs-row"><span class="cs-lbl">Muestras (marketing)</span><span class="cs-val" style="color:var(--yellow)">${a.sampleRows} filas · se cargan como sample</span></div>
+        <div class="cs-row"><span class="cs-lbl">Revenue NET</span><span class="cs-val" style="color:var(--accent);font-weight:700">${fmt$(a.revenueNet)}</span></div>
+        <div class="cs-row"><span class="cs-lbl">Órdenes únicas</span><span class="cs-val">${uniqueOrders.toLocaleString()}</span></div>
+        <div class="cs-row"><span class="cs-lbl">Typos corregidos</span><span class="cs-val">${a.typosApplied}</span></div>
+      </div>
+      
+      <div class="cs-actions-block">
+        <div class="cs-actions-title">Se realizarán ${newCustsCount + newSkusCount + 2} operaciones en la BD:</div>
+        <ul class="cs-actions-list">
+          ${newCustsCount ? `<li><span class="cs-badge new">+</span> Crear ${newCustsCount} customer(s) nuevo(s) en <code>customers</code></li>` : ''}
+          ${newSkusCount ? `<li><span class="cs-badge new">+</span> Crear ${newSkusCount} SKU(s) nuevo(s) en <code>skus</code></li>` : ''}
+          <li><span class="cs-badge ins">↓</span> Insertar ${salesToInsert.toLocaleString()} fila(s) en <code>sales</code></li>
+          <li><span class="cs-badge log">✎</span> Registrar upload en <code>upload_log</code></li>
+        </ul>
+      </div>
+      
+      <div class="cs-warn">
+        ⚠️ Antes de confirmar, revisa que las clasificaciones de los customers nuevos sean correctas. Después de subir, tendrás que editar manualmente en la BD si algo está mal.
+      </div>
+      
+      <div class="cs-buttons">
+        <button class="btn-secondary" onclick="scrollToStep3()">← Revisar clasificaciones</button>
+        <button class="btn-primary" onclick="executeUpload()" id="btn-upload">
+          🚀 Confirmar y subir a Supabase
+        </button>
+      </div>
+    </div>
+    
+    <div id="upload-progress" style="display:none"></div>
+  `;
+}
+
+function scrollToStep3(){
+  document.getElementById('step-3').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+// ============================================================
+// EXECUTE UPLOAD — el motor real
+// ============================================================
+async function executeUpload(){
+  const btn = document.getElementById('btn-upload');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-btn"></span> Subiendo...';
+  
+  const progress = document.getElementById('upload-progress');
+  progress.style.display = 'block';
+  progress.innerHTML = `<div class="progress-log" id="progress-log"></div>`;
+  
+  const log = (msg, status='info') => {
+    const el = document.getElementById('progress-log');
+    const icons = {info:'⏳', ok:'✅', err:'❌', warn:'⚠️'};
+    el.innerHTML += `<div class="log-line log-${status}">${icons[status]||''} ${msg}</div>`;
+    el.scrollTop = el.scrollHeight;
+  };
+  
+  try {
+    // ============================================================
+    // 1. Crear customers nuevos
+    // ============================================================
+    const newCustsList = Object.entries(newCustomerClassifications);
+    if (newCustsList.length){
+      log(`Creando ${newCustsList.length} customer(s) nuevo(s)...`, 'info');
+      const custRows = newCustsList.map(([name, cls]) => ({
+        customer_name: name,
+        chain: cls.chain || name,
+        category: cls.category || 'Otros',
+        channel: cls.channel || 'Grocery',
+        primary_rep: cls.primary_rep || null,
+        status: cls.status || 'Active',
+        notes: `Auto-created from ${uploadedFile.name} on ${new Date().toISOString().slice(0,10)}`
+      }));
+      const {error: e1} = await sb.from('customers').insert(custRows);
+      if (e1) throw new Error(`customers: ${e1.message}`);
+      log(`${newCustsList.length} customer(s) creado(s) exitosamente`, 'ok');
+    } else {
+      log('No hay customers nuevos que crear', 'ok');
+    }
+    
+    // ============================================================
+    // 2. Crear SKUs nuevos
+    // ============================================================
+    const newSkusList = Object.entries(newSKUData);
+    if (newSkusList.length){
+      log(`Creando ${newSkusList.length} SKU(s) nuevo(s)...`, 'info');
+      const skuRows = newSkusList.map(([sku, d]) => ({
+        sku: sku,
+        item_name: d.item_name || sku,
+        brand: d.brand || 'Other',
+        landed_cost: d.landed_cost || 0,
+        case_pack: d.case_pack || 1,
+        active: true,
+        company: selectedCompany,
+        notes: `Auto-created from ${uploadedFile.name}`
+      }));
+      const {error: e2} = await sb.from('skus').insert(skuRows);
+      if (e2) throw new Error(`skus: ${e2.message}`);
+      log(`${newSkusList.length} SKU(s) creado(s) exitosamente`, 'ok');
+    } else {
+      log('No hay SKUs nuevos que crear', 'ok');
+    }
+    
+    // ============================================================
+    // 3. Insertar TODAS las ventas (normal + void + sample + credit)
+    // en chunks de 500 para no timeout
+    // ============================================================
+    const salesRows = parsedRows.map(r => ({
+      invoice_date: r.iso_date,
+      invoice_number: r.invoice,
+      customer_name: r.customer,
+      sku: r.sku || null,
+      qty: r.qty,
+      amount: r.amount,
+      sales_rep: r.rep || null,
+      source_file: uploadedFile.name,
+      company: selectedCompany,
+      sales_type: r.tipo // 'normal', 'void', 'sample', o 'credit'
+    })).filter(r => r.invoice_date); // filtro filas sin fecha
+    
+    log(`Insertando ${salesRows.length.toLocaleString()} filas de ventas en chunks de 500...`, 'info');
+    
+    const CHUNK = 500;
+    let inserted = 0;
+    for (let i = 0; i < salesRows.length; i += CHUNK){
+      const chunk = salesRows.slice(i, i + CHUNK);
+      const {error} = await sb.from('sales').insert(chunk);
+      if (error) throw new Error(`sales chunk ${Math.floor(i/CHUNK)+1}: ${error.message}`);
+      inserted += chunk.length;
+      log(`Chunk ${Math.floor(i/CHUNK)+1}/${Math.ceil(salesRows.length/CHUNK)}: ${inserted}/${salesRows.length} filas`, 'info');
+    }
+    log(`${inserted.toLocaleString()} ventas insertadas exitosamente`, 'ok');
+    
+    // ============================================================
+    // 4. Actualizar upload_log
+    // ============================================================
+    log('Registrando el upload en upload_log...', 'info');
+    const dates = salesRows.map(r=>r.invoice_date).sort();
+    const {error: eLog} = await sb.from('upload_log').insert({
+      filename: uploadedFile.name,
+      period_start: dates[0],
+      period_end: dates[dates.length-1],
+      rows_inserted: salesRows.length,
+      new_customers: newCustsList.length,
+      new_skus: newSkusList.length,
+      company: selectedCompany,
+      uploaded_by: (await sb.auth.getUser()).data.user?.email || 'unknown',
+      notes: `${analysis.normalRows} normal · ${analysis.creditRows} credits · ${analysis.voidRows} voids · ${analysis.sampleRows} samples · ${analysis.typosApplied} typos fixed`
+    });
+    if (eLog) throw new Error(`upload_log: ${eLog.message}`);
+    log('Upload log registrado', 'ok');
+    
+    // ============================================================
+    // SUCCESS
+    // ============================================================
+    log('¡Todo listo! 🎉', 'ok');
+    setTimeout(() => showSuccessScreen(salesRows.length, newCustsList.length, newSkusList.length), 500);
+    
+  } catch (err) {
+    log(`Error: ${err.message}`, 'err');
+    log('El upload se detuvo. Revisa el error y contáctame si necesitas rollback.', 'warn');
+    btn.disabled = false;
+    btn.innerHTML = '🚀 Reintentar';
+    console.error(err);
+  }
+}
+
+function showSuccessScreen(salesCount, custCount, skuCount){
+  const fmt$ = n => "$"+n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+  document.querySelector('.content').innerHTML = `
+    <div class="success-screen">
+      <div class="success-icon">🎉</div>
+      <div class="success-title">Upload completado</div>
+      <div class="success-sub">${uploadedFile.name}</div>
+      
+      <div class="success-stats">
+        <div class="ss-item">
+          <div class="ss-val">${salesCount.toLocaleString()}</div>
+          <div class="ss-lbl">Ventas insertadas</div>
+        </div>
+        <div class="ss-item">
+          <div class="ss-val">${fmt$(analysis.revenueNet)}</div>
+          <div class="ss-lbl">Revenue añadido</div>
+        </div>
+        <div class="ss-item">
+          <div class="ss-val">${custCount}</div>
+          <div class="ss-lbl">Customers nuevos</div>
+        </div>
+        <div class="ss-item">
+          <div class="ss-val">${skuCount}</div>
+          <div class="ss-lbl">SKUs nuevos</div>
+        </div>
+      </div>
+      
+      <div class="success-actions">
+        <a href="index.html" class="btn-primary" style="text-decoration:none;display:inline-block;max-width:280px">
+          📊 Ver dashboard actualizado
+        </a>
+        <button class="btn-secondary" onclick="window.location.reload()">
+          ↻ Subir otro archivo
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+// ============================================================
+// START
+// ============================================================
+checkSession();
+</script>
+</body>
+</html>
