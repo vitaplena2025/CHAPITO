@@ -485,7 +485,7 @@ body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',-app
 .bar-wrap{display:flex;align-items:center;gap:8px;}
 .bar-bg{flex:1;height:6px;background:var(--surface2);border-radius:4px;overflow:hidden;min-width:60px;}
 .bar-fill{height:100%;background:var(--accent);border-radius:4px;transition:width 0.3s;}
-.category-group-header td{
+.channel-group-header td{
   background:rgba(52,168,82,0.06);
   color:var(--accent);
   font-weight:700;
@@ -528,7 +528,7 @@ body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',-app
   <div class="contextual-filters" id="cf-categories">
     <div class="contextual-title"><span class="icon">▸</span>Filtros de Canales</div>
     <div class="contextual-selects">
-      <select id="cf-channel" class="filter-select" onchange="applyFilters()">
+      <select id="cf-department" class="filter-select" onchange="applyFilters()">
         <option value="all">Departamento: Todos</option>
         <option value="Grocery">Grocery</option>
         <option value="Deli">Deli</option>
@@ -554,7 +554,7 @@ body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',-app
   <div class="contextual-filters" id="cf-chains">
     <div class="contextual-title"><span class="icon">▸</span>Filtros de Cadenas</div>
     <div class="contextual-selects">
-      <select id="cf-category" class="filter-select" onchange="applyFilters()">
+      <select id="cf-channel" class="filter-select" onchange="applyFilters()">
         <option value="all">Canal: Todos</option>
       </select>
     </div>
@@ -618,7 +618,7 @@ body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',-app
   <div class="contextual-filters" id="cf-customers">
     <div class="contextual-title"><span class="icon">▸</span>Filtros de Clientes</div>
     <div class="contextual-selects">
-      <select id="cf-cust-category" class="filter-select" onchange="applyFilters()">
+      <select id="cf-cust-channel" class="filter-select" onchange="applyFilters()">
         <option value="all">Canal: Todos</option>
       </select>
       <select id="cf-status" class="filter-select" onchange="applyFilters()">
@@ -688,11 +688,11 @@ if (typeof ChartDataLabels !== 'undefined') {
 // CONSTANTS
 // ============================================================
 const MN={1:"Enero",2:"Febrero",3:"Marzo",4:"Abril",5:"Mayo",6:"Junio",7:"Julio",8:"Agosto",9:"Septiembre",10:"Octubre",11:"Noviembre",12:"Diciembre"};
-const CATEGORY_COLORS={'Club':'#0071ce','Mass Market':'#ffc220','Supermercados':'#34A852','Specialty Store':'#a855f7','Reposteria':'#ec4899','Restaurante':'#ef4444','Health Food':'#10b981','Panadería':'#fb923c','Farmacias':'#3b82f6','Convenience Store':'#06b6d4','Otros':'#64748b','Colmado':'#8b5cf6','Meal Prep':'#f97316'};
-const CHANNEL_COLORS={'Grocery':'#34A852','Deli':'#F4C124','Food Service':'#ec4899','Retail':'#34A852'};
+const CHANNEL_COLORS={'Club':'#0071ce','Mass Market':'#ffc220','Supermercados':'#34A852','Specialty Store':'#a855f7','Reposteria':'#ec4899','Restaurante':'#ef4444','Health Food':'#10b981','Panadería/Cafetería':'#fb923c','Coffee Shop':'#c084fc','Farmacias':'#3b82f6','Convenience Store':'#06b6d4','Otros':'#64748b','Colmado':'#8b5cf6','Meal Prep':'#f97316'};
+const DEPARTMENT_COLORS={'Grocery':'#34A852','Deli':'#F4C124','Food Service':'#ec4899','Retail':'#0ea5e9'};
 const BRAND_COLORS={'Lakanto':'#34A852','Impact':'#6366f1','Palmini':'#f59e0b','Nekstella':'#ec4899','Töst':'#f97316','Green Cola':'#10b981','Unknown':'#475569'};
 const REP_COLORS=['#34A852','#6366f1','#F4C124','#ec4899','#10b981','#f97316','#a855f7','#06b6d4','#84cc16'];
-const CATEGORY_ORDER=['Club','Mass Market','Supermercados','Specialty Store','Restaurante','Reposteria','Panadería','Health Food','Farmacias','Convenience Store','Colmado','Meal Prep','Otros'];
+const CHANNEL_ORDER=['Club','Mass Market','Supermercados','Specialty Store','Restaurante','Reposteria','Panadería/Cafetería','Coffee Shop','Health Food','Farmacias','Convenience Store','Colmado','Meal Prep','Otros'];
 const COMPANY_COLORS={'Vitaplena':'#34A852','Egg Market':'#F4C124','Hua Xing':'#ec4899'};
 const ANNUAL_GOAL_2026 = 1500000; // Meta anual $1.5M consolidada
 
@@ -777,8 +777,8 @@ function enrichData(){
       amount: amt,
       month: r.invoice_date ? Number(r.invoice_date.slice(5,7)) : null,
       chain: c.chain || '—',
-      category: c.category || 'Otros',
-      channel: c.channel || 'Grocery',
+      channel: c.channel || 'Otros',
+      department: c.department || 'Grocery',
       status: c.status || 'Active',
       brand: s.brand || 'Unknown',
       sku_name: s.item_name || r.sku,
@@ -801,10 +801,10 @@ function initFilters(){
   sel('f-company',COMPANIES);
   sel('f-rep',[...new Set(ENRICHED.map(r=>r.sales_rep))].filter(x=>x).sort());
   sel('f-chain',[...new Set(ENRICHED.map(r=>r.chain))].filter(x=>x&&x!=='—').sort());
-  sel('cf-category',[...new Set(ENRICHED.map(r=>r.category))].filter(x=>x).sort());
+  sel('cf-channel',[...new Set(ENRICHED.map(r=>r.channel))].filter(x=>x).sort());
   sel('cf-brand',[...new Set(ENRICHED.map(r=>r.brand))].filter(x=>x&&x!=='Unknown').sort());
   sel('cf-sku',[...new Set(ENRICHED.map(r=>r.sku))].filter(x=>x).sort());
-  sel('cf-cust-category',[...new Set(ENRICHED.map(r=>r.category))].filter(x=>x).sort());
+  sel('cf-cust-channel',[...new Set(ENRICHED.map(r=>r.channel))].filter(x=>x).sort());
   
   // Setup multi-select de meses
   availableMonths = [...new Set(ENRICHED.map(r=>r.month))].filter(x=>x).sort((a,b)=>a-b);
@@ -977,11 +977,11 @@ function applyFilters(){
   const co=document.getElementById("f-company").value;
   const r=document.getElementById("f-rep").value;
   const ch=document.getElementById("f-chain").value;
-  const cfChan=document.getElementById("cf-channel")?.value||"all";
-  const cfCat=document.getElementById("cf-category")?.value||"all";
+  const cfChan=document.getElementById("cf-department")?.value||"all";
+  const cfCat=document.getElementById("cf-channel")?.value||"all";
   const cfBrand=document.getElementById("cf-brand")?.value||"all";
   const cfSku=document.getElementById("cf-sku")?.value||"all";
-  const cfCustCat=document.getElementById("cf-cust-category")?.value||"all";
+  const cfCustCat=document.getElementById("cf-cust-channel")?.value||"all";
   const cfStatus=document.getElementById("cf-status")?.value||"all";
   
   // Month filter: selectedMonths is either "all" or an array of month numbers
@@ -996,11 +996,11 @@ function applyFilters(){
     monthMatches(x.month)&&
     (r==="all"||x.sales_rep===r)&&
     (ch==="all"||x.chain===ch)&&
-    (cfChan==="all"||x.channel===cfChan)&&
-    (cfCat==="all"||x.category===cfCat)&&
+    (cfChan==="all"||x.department===cfChan)&&
+    (cfCat==="all"||x.channel===cfCat)&&
     (cfBrand==="all"||x.brand===cfBrand)&&
     (cfSku==="all"||x.sku===cfSku)&&
-    (cfCustCat==="all"||x.category===cfCustCat)&&
+    (cfCustCat==="all"||x.channel===cfCustCat)&&
     (cfStatus==="all"||x.status===cfStatus)
   );
   cascadeFilterOptions();
@@ -1012,7 +1012,7 @@ function applyFilters(){
 function cascadeFilterOptions(){
   const getVal=id=>document.getElementById(id)?.value||"all";
   const co=getVal("f-company"),r=getVal("f-rep"),ch=getVal("f-chain");
-  const cfChan=getVal("cf-channel"),cfCat=getVal("cf-category"),cfBrand=getVal("cf-brand"),cfSku=getVal("cf-sku"),cfCustCat=getVal("cf-cust-category"),cfStatus=getVal("cf-status");
+  const cfChan=getVal("cf-department"),cfCat=getVal("cf-channel"),cfBrand=getVal("cf-brand"),cfSku=getVal("cf-sku"),cfCustCat=getVal("cf-cust-channel"),cfStatus=getVal("cf-status");
   
   // Function: filter ENRICHED by all filters EXCEPT the one we're computing options for
   function subsetExcept(excludeId){
@@ -1021,11 +1021,11 @@ function cascadeFilterOptions(){
       (excludeId==="f-month"||selectedMonths==="all"||(Array.isArray(selectedMonths)&&selectedMonths.includes(x.month)))&&
       (excludeId==="f-rep"||r==="all"||x.sales_rep===r)&&
       (excludeId==="f-chain"||ch==="all"||x.chain===ch)&&
-      (excludeId==="cf-channel"||cfChan==="all"||x.channel===cfChan)&&
-      (excludeId==="cf-category"||cfCat==="all"||x.category===cfCat)&&
+      (excludeId==="cf-department"||cfChan==="all"||x.department===cfChan)&&
+      (excludeId==="cf-channel"||cfCat==="all"||x.channel===cfCat)&&
       (excludeId==="cf-brand"||cfBrand==="all"||x.brand===cfBrand)&&
       (excludeId==="cf-sku"||cfSku==="all"||x.sku===cfSku)&&
-      (excludeId==="cf-cust-category"||cfCustCat==="all"||x.category===cfCustCat)&&
+      (excludeId==="cf-cust-channel"||cfCustCat==="all"||x.channel===cfCustCat)&&
       (excludeId==="cf-status"||cfStatus==="all"||x.status===cfStatus)
     );
   }
@@ -1076,8 +1076,8 @@ function cascadeFilterOptions(){
   renderPeriodDropdown();
   
   // Contextual filters cascade
-  if(document.getElementById("cf-category")){
-    updateSelect("cf-category",[...new Set(subsetExcept("cf-category").map(r=>r.category))].filter(x=>x).sort(),"Canal: Todos");
+  if(document.getElementById("cf-channel")){
+    updateSelect("cf-channel",[...new Set(subsetExcept("cf-channel").map(r=>r.channel))].filter(x=>x).sort(),"Canal: Todos");
   }
   if(document.getElementById("cf-brand")){
     updateSelect("cf-brand",[...new Set(subsetExcept("cf-brand").map(r=>r.brand))].filter(x=>x&&x!=='Unknown').sort(),"Marca: Todas");
@@ -1085,13 +1085,13 @@ function cascadeFilterOptions(){
   if(document.getElementById("cf-sku")){
     updateSelect("cf-sku",[...new Set(subsetExcept("cf-sku").map(r=>r.sku))].filter(x=>x).sort(),"SKU: Todos");
   }
-  if(document.getElementById("cf-cust-category")){
-    updateSelect("cf-cust-category",[...new Set(subsetExcept("cf-cust-category").map(r=>r.category))].filter(x=>x).sort(),"Canal: Todos");
+  if(document.getElementById("cf-cust-channel")){
+    updateSelect("cf-cust-channel",[...new Set(subsetExcept("cf-cust-channel").map(r=>r.channel))].filter(x=>x).sort(),"Canal: Todos");
   }
 }
 
 function resetFilters(){
-  ["f-company","f-rep","f-chain","cf-channel","cf-category","cf-brand","cf-sku","cf-cust-category","cf-status"].forEach(id=>{const el=document.getElementById(id);if(el)el.value="all";});
+  ["f-company","f-rep","f-chain","cf-department","cf-channel","cf-brand","cf-sku","cf-cust-channel","cf-status"].forEach(id=>{const el=document.getElementById(id);if(el)el.value="all";});
   selectedMonths = "all";
   pendingSelectedMonths = "all";
   updatePeriodLabel();
@@ -1237,11 +1237,11 @@ function renderOverview(){
   // Ticket Promedio y Cases/Orden segmentados (evitar distorsión de Club)
   const aov = uo > 0 ? ts / uo : 0;
   const casesPerOrder = uo > 0 ? tc / uo : 0;
-  const dSinClub = d.filter(r => r.category !== "Club");
+  const dSinClub = d.filter(r => r.channel !== "Club");
   const uoSinClub = new Set(dSinClub.map(r=>r.invoice_number)).size;
   const aovSinClub = uoSinClub > 0 ? dSinClub.reduce((s,r)=>s+r.amount,0) / uoSinClub : 0;
   const cpoSinClub = uoSinClub > 0 ? dSinClub.reduce((s,r)=>s+r.qty,0) / uoSinClub : 0;
-  const dSuper = d.filter(r => r.category === "Supermercados");
+  const dSuper = d.filter(r => r.channel === "Supermercados");
   const uoSuper = new Set(dSuper.map(r=>r.invoice_number)).size;
   const aovSuper = uoSuper > 0 ? dSuper.reduce((s,r)=>s+r.amount,0) / uoSuper : 0;
   const cpoSuper = uoSuper > 0 ? dSuper.reduce((s,r)=>s+r.qty,0) / uoSuper : 0;
@@ -1322,7 +1322,7 @@ function renderOverview(){
     }
   });
   
-  const cA=agg(FILTERED,r=>r.category);
+  const cA=agg(FILTERED,r=>r.channel);
   const cK=Object.keys(cA).filter(k=>cA[k].sales>0).sort((a,b)=>cA[b].sales-cA[a].sales);
   mkChart("ch-category-pie",{
     type:"doughnut",
@@ -1330,7 +1330,7 @@ function renderOverview(){
       labels:cK,
       datasets:[{
         data:cK.map(k=>cA[k].sales),
-        backgroundColor:cK.map(k=>CATEGORY_COLORS[k]||"#64748b"),
+        backgroundColor:cK.map(k=>CHANNEL_COLORS[k]||"#64748b"),
         borderWidth:2,
         borderColor:"#111827",
         datalabels:{
@@ -1379,7 +1379,7 @@ function renderOverview(){
 }
 
 function renderCategories(){
-  const d=FILTERED,cA=agg(d,r=>r.category),chA=agg(d,r=>r.channel);
+  const d=FILTERED,cA=agg(d,r=>r.channel),chA=agg(d,r=>r.department);
   const ts=Object.values(cA).reduce((s,v)=>s+v.sales,0);
   const cK=Object.keys(cA).filter(k=>cA[k].sales>0).sort((a,b)=>cA[b].sales-cA[a].sales);
   const topCat=cK[0]||"";
@@ -1388,12 +1388,12 @@ function renderCategories(){
     <div class="kpi" style="--kpi-color:#6366f1"><div class="kpi-label">#1 Canal</div><div class="kpi-value" style="font-size:17px">${topCat}</div><div class="kpi-sub">${$(cA[topCat]?.sales||0)} · ${P((cA[topCat]?.sales||0)/ts*100)}</div></div>
     <div class="kpi" style="--kpi-color:#F4C124"><div class="kpi-label">Departamentos</div><div class="kpi-value">${Object.keys(chA).length}</div></div>
     <div class="kpi" style="--kpi-color:#ec4899"><div class="kpi-label">Ventas Totales</div><div class="kpi-value">${$(ts)}</div></div>`;
-  mkChart("ch-cat-bar",{type:"bar",data:{labels:cK,datasets:[{label:"Ventas $",data:cK.map(k=>cA[k].sales),backgroundColor:cK.map(k=>CATEGORY_COLORS[k]||"#64748b"),borderRadius:5}]},options:{...xDollar(),indexAxis:"y",responsive:true,plugins:{legend:{display:false}}}});
+  mkChart("ch-cat-bar",{type:"bar",data:{labels:cK,datasets:[{label:"Ventas $",data:cK.map(k=>cA[k].sales),backgroundColor:cK.map(k=>CHANNEL_COLORS[k]||"#64748b"),borderRadius:5}]},options:{...xDollar(),indexAxis:"y",responsive:true,plugins:{legend:{display:false}}}});
   const chK=Object.keys(chA);
-  mkChart("ch-channel-bar",{type:"bar",data:{labels:chK,datasets:[{label:"Ventas $",data:chK.map(k=>chA[k].sales),backgroundColor:chK.map(k=>CHANNEL_COLORS[k]||"#64748b"),borderRadius:7}]},options:{...yDollar(),responsive:true,plugins:{legend:{display:false}}}});
+  mkChart("ch-channel-bar",{type:"bar",data:{labels:chK,datasets:[{label:"Ventas $",data:chK.map(k=>chA[k].sales),backgroundColor:chK.map(k=>DEPARTMENT_COLORS[k]||"#64748b"),borderRadius:7}]},options:{...yDollar(),responsive:true,plugins:{legend:{display:false}}}});
   let rows="";
   cK.forEach(k=>{
-    const v=cA[k],pct=v.sales/ts*100,color=CATEGORY_COLORS[k]||"#64748b";
+    const v=cA[k],pct=v.sales/ts*100,color=CHANNEL_COLORS[k]||"#64748b";
     rows+=`<tr><td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${color};margin-right:8px"></span><span class="bold">${k}</span></td><td class="r bold">${$(v.sales)}</td><td class="r"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div><span>${P(pct)}</span></div></td><td class="r">${v.cases.toLocaleString()}</td><td class="r">${v.orders}</td><td class="r">${v.customers}</td><td class="r">${$(v.gp)}</td><td class="r">${mpill(v.margin)}</td></tr>`;
   });
   document.getElementById("tbl-category").innerHTML=`<thead><tr><th>Canal</th><th class="r">Ventas $</th><th class="r">% Mix</th><th class="r">Cajas</th><th class="r">Órdenes</th><th class="r">Clientes</th><th class="r">GP $</th><th class="r">Margen</th></tr></thead><tbody>${rows}</tbody>`;
@@ -1409,16 +1409,16 @@ function renderChains(){
     <div class="kpi" style="--kpi-color:#6366f1"><div class="kpi-label">#1 Cadena</div><div class="kpi-value" style="font-size:17px">${top1}</div><div class="kpi-sub">${$(chA[top1]?.sales||0)}</div></div>
     <div class="kpi" style="--kpi-color:#F4C124"><div class="kpi-label">Mejor Margen</div><div class="kpi-value" style="font-size:17px">${top1Margin}</div><div class="kpi-sub">${P(chA[top1Margin]?.margin||0)}</div></div>
     <div class="kpi" style="--kpi-color:#ec4899"><div class="kpi-label">Ventas Totales</div><div class="kpi-value">${$(ts)}</div></div>`;
-  const chainCat={};Object.values(CUSTOMERS).forEach(c=>{if(!chainCat[c.chain])chainCat[c.chain]=c.category;});
-  mkChart("ch-chain-bar",{type:"bar",data:{labels:chK,datasets:[{label:"Ventas $",data:chK.map(k=>chA[k].sales),backgroundColor:chK.map(k=>CATEGORY_COLORS[chainCat[k]]||"#64748b"),borderRadius:5}]},options:{...xDollar(),indexAxis:"y",responsive:true,plugins:{legend:{display:false}}}});
+  const chainCat={};Object.values(CUSTOMERS).forEach(c=>{if(!chainCat[c.chain])chainCat[c.chain]=c.channel;});
+  mkChart("ch-chain-bar",{type:"bar",data:{labels:chK,datasets:[{label:"Ventas $",data:chK.map(k=>chA[k].sales),backgroundColor:chK.map(k=>CHANNEL_COLORS[chainCat[k]]||"#64748b"),borderRadius:5}]},options:{...xDollar(),indexAxis:"y",responsive:true,plugins:{legend:{display:false}}}});
   mkChart("ch-chain-margin",{type:"bar",data:{labels:chK,datasets:[{label:"Margen %",data:chK.map(k=>chA[k].margin),backgroundColor:chK.map(k=>mc(chA[k].margin)),borderRadius:5}]},options:{responsive:true,indexAxis:"y",plugins:{legend:{display:false}},scales:{x:{max:65,ticks:{color:"#94a3b8",font:{family:"Plus Jakarta Sans"},callback:v=>v+"%"},grid:{color:"rgba(255,255,255,.06)"}},y:{ticks:{color:"#94a3b8",font:{family:"Plus Jakarta Sans"}},grid:{color:"rgba(255,255,255,.04)"}}}}});
   let rows="";
-  CATEGORY_ORDER.forEach(cat=>{
+  CHANNEL_ORDER.forEach(cat=>{
     const catChains=chK.filter(k=>chainCat[k]===cat);if(!catChains.length)return;
     const catTotal=catChains.reduce((s,k)=>s+chA[k].sales,0);
-    rows+=`<tr class="category-group-header"><td colspan="8">▸ ${cat} — ${$(catTotal)} (${P(catTotal/ts*100)})</td></tr>`;
+    rows+=`<tr class="channel-group-header"><td colspan="8">▸ ${cat} — ${$(catTotal)} (${P(catTotal/ts*100)})</td></tr>`;
     catChains.forEach(k=>{
-      const v=chA[k],pct=v.sales/ts*100,color=CATEGORY_COLORS[cat]||"#64748b";
+      const v=chA[k],pct=v.sales/ts*100,color=CHANNEL_COLORS[cat]||"#64748b";
       rows+=`<tr><td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${color};margin-right:8px"></span><span class="bold">${k}</span></td><td class="r bold">${$(v.sales)}</td><td class="r"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div><span>${P(pct)}</span></div></td><td class="r">${v.cases.toLocaleString()}</td><td class="r">${v.orders}</td><td class="r">${v.customers}</td><td class="r">${$(v.gp)}</td><td class="r">${mpill(v.margin)}</td></tr>`;
     });
   });
@@ -1474,12 +1474,12 @@ function renderCustomers(){
     <div class="kpi" style="--kpi-color:#6366f1"><div class="kpi-label">Top Cliente</div><div class="kpi-value" style="font-size:15px">${cK[0]?cK[0].slice(0,22):"—"}</div><div class="kpi-sub">${$(cA[cK[0]]?.sales||0)}</div></div>
     <div class="kpi" style="--kpi-color:#F4C124"><div class="kpi-label">Top 15 % del Total</div><div class="kpi-value">${P(top15.reduce((s,k)=>s+cA[k].sales,0)/ts*100)}</div></div>
     <div class="kpi" style="--kpi-color:#ec4899"><div class="kpi-label">Ticket Promedio</div><div class="kpi-value">${$(ts/Math.max(cK.length,1))}</div></div>`;
-  const catOf=c=>(CUSTOMERS[c]?.category||"Otros");
-  mkChart("ch-cust-bar",{type:"bar",data:{labels:top15.map(k=>k.length>24?k.slice(0,24)+"…":k),datasets:[{label:"Ventas $",data:top15.map(k=>cA[k].sales),backgroundColor:top15.map(k=>CATEGORY_COLORS[catOf(k)]||"#64748b"),borderRadius:4}]},options:{...xDollar(),indexAxis:"y",responsive:true,plugins:{legend:{display:false}}}});
-  mkChart("ch-cust-cases",{type:"bar",data:{labels:top15.map(k=>k.length>24?k.slice(0,24)+"…":k),datasets:[{label:"Cajas",data:top15.map(k=>cA[k].cases),backgroundColor:top15.map(k=>(CATEGORY_COLORS[catOf(k)]||"#64748b")+"aa"),borderRadius:4}]},options:{...CD,indexAxis:"y",responsive:true,plugins:{legend:{display:false}}}});
+  const catOf=c=>(CUSTOMERS[c]?.channel||"Otros");
+  mkChart("ch-cust-bar",{type:"bar",data:{labels:top15.map(k=>k.length>24?k.slice(0,24)+"…":k),datasets:[{label:"Ventas $",data:top15.map(k=>cA[k].sales),backgroundColor:top15.map(k=>CHANNEL_COLORS[catOf(k)]||"#64748b"),borderRadius:4}]},options:{...xDollar(),indexAxis:"y",responsive:true,plugins:{legend:{display:false}}}});
+  mkChart("ch-cust-cases",{type:"bar",data:{labels:top15.map(k=>k.length>24?k.slice(0,24)+"…":k),datasets:[{label:"Cajas",data:top15.map(k=>cA[k].cases),backgroundColor:top15.map(k=>(CHANNEL_COLORS[catOf(k)]||"#64748b")+"aa"),borderRadius:4}]},options:{...CD,indexAxis:"y",responsive:true,plugins:{legend:{display:false}}}});
   let rows=cK.map((k,i)=>{
     const v=cA[k],pct=v.sales/ts*100,m=CUSTOMERS[k]||{};
-    const cat=m.category||'—',ch=m.channel||'—',chain=m.chain||'—',rep=m.primary_rep||'—',st=m.status||'Active',cc=CATEGORY_COLORS[cat]||"#64748b";
+    const cat=m.channel||'—',ch=m.department||'—',chain=m.chain||'—',rep=m.primary_rep||'—',st=m.status||'Active',cc=CHANNEL_COLORS[cat]||"#64748b";
     return`<tr><td style="color:${i<3?"#F4C124":"#475569"};font-weight:600">${i+1}</td><td class="bold">${k}</td><td>${chain}</td><td><span class="pill" style="background:${cc}22;color:${cc}">${cat}</span></td><td>${ch}</td><td>${rep}</td><td><span class="status-pill ${st==='Active'?'status-active':'status-dormant'}">${st}</span></td><td class="r bold">${$(v.sales)}</td><td class="r"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${Math.min(pct*6,100)}%"></div></div><span>${P(pct)}</span></div></td><td class="r">${v.cases.toLocaleString()}</td><td class="r">${$(v.gp)}</td><td class="r">${mpill(v.margin)}</td></tr>`;
   }).join("");
   document.getElementById("tbl-customer").innerHTML=`<thead><tr><th>#</th><th>Cliente</th><th>Cadena</th><th>Canal</th><th>Departamento</th><th>Rep</th><th>Status</th><th class="r">Ventas $</th><th class="r">% Mix</th><th class="r">Cajas</th><th class="r">GP $</th><th class="r">Margen</th></tr></thead><tbody>${rows}</tbody>`;
@@ -1487,7 +1487,7 @@ function renderCustomers(){
 
 function renderMonthly(){
   const d=FILTERED,months=activeMonths(d);
-  const cA=agg(d,r=>r.category),ts=Object.values(cA).reduce((s,v)=>s+v.sales,0);
+  const cA=agg(d,r=>r.channel),ts=Object.values(cA).reduce((s,v)=>s+v.sales,0);
   const topCats=Object.keys(cA).filter(k=>cA[k].sales>0).sort((a,b)=>cA[b].sales-cA[a].sales).slice(0,6);
   const bA=agg(d,r=>r.brand);
   const brands=Object.keys(bA).filter(k=>bA[k].sales>0&&k!=='Unknown').sort((a,b)=>bA[b].sales-bA[a].sales).slice(0,6);
@@ -1499,17 +1499,17 @@ function renderMonthly(){
     <div class="kpi" style="--kpi-color:#6366f1"><div class="kpi-label">Mejor Mes</div><div class="kpi-value" style="font-size:17px">${months.length?MN[months[mSales.indexOf(Math.max(...mSales))]]:"—"}</div><div class="kpi-sub">${$(Math.max(...mSales,0))}</div></div>
     <div class="kpi" style="--kpi-color:${momChange>=0?'#10b981':'#ef4444'}"><div class="kpi-label">Último vs Anterior</div><div class="kpi-value">${momChange>=0?"+":""}${momChange.toFixed(1)}%</div></div>
     <div class="kpi" style="--kpi-color:#F4C124"><div class="kpi-label">Promedio Mensual</div><div class="kpi-value">${months.length?$(ts/months.length):"$0"}</div></div>`;
-  mkChart("ch-mon-cat",{type:"line",data:{labels:months.map(m=>MN[m]),datasets:topCats.map(c=>({label:c,data:months.map(m=>activeRows(d).filter(r=>r.category===c&&r.month===m).reduce((s,r)=>s+r.amount,0)),borderColor:CATEGORY_COLORS[c]||"#64748b",backgroundColor:(CATEGORY_COLORS[c]||"#64748b")+"22",tension:.35,fill:false,pointRadius:5,pointHoverRadius:8}))},options:{...yDollar(),responsive:true}});
+  mkChart("ch-mon-cat",{type:"line",data:{labels:months.map(m=>MN[m]),datasets:topCats.map(c=>({label:c,data:months.map(m=>activeRows(d).filter(r=>r.channel===c&&r.month===m).reduce((s,r)=>s+r.amount,0)),borderColor:CHANNEL_COLORS[c]||"#64748b",backgroundColor:(CHANNEL_COLORS[c]||"#64748b")+"22",tension:.35,fill:false,pointRadius:5,pointHoverRadius:8}))},options:{...yDollar(),responsive:true}});
   mkChart("ch-mon-brand",{type:"line",data:{labels:months.map(m=>MN[m]),datasets:brands.map(b=>({label:b,data:months.map(m=>activeRows(d).filter(r=>r.brand===b&&r.month===m).reduce((s,r)=>s+r.amount,0)),borderColor:BRAND_COLORS[b]||"#64748b",backgroundColor:(BRAND_COLORS[b]||"#64748b")+"22",tension:.35,fill:false,pointRadius:5,pointHoverRadius:8}))},options:{...yDollar(),responsive:true}});
   const chA=agg(d,r=>r.chain);
   const allChains=Object.keys(chA).filter(k=>k!=='—').sort((a,b)=>chA[b].sales-chA[a].sales);
-  const chainCat={};Object.values(CUSTOMERS).forEach(c=>{if(!chainCat[c.chain])chainCat[c.chain]=c.category;});
+  const chainCat={};Object.values(CUSTOMERS).forEach(c=>{if(!chainCat[c.chain])chainCat[c.chain]=c.channel;});
   const hdr=`<tr><th>Cadena</th>${months.map(m=>`<th class="r">${MN[m]}</th>`).join("")}<th class="r">Total</th><th class="r">Trend</th></tr>`;
   let rows="";
-  CATEGORY_ORDER.forEach(cat=>{
+  CHANNEL_ORDER.forEach(cat=>{
     const cc=allChains.filter(k=>chainCat[k]===cat);if(!cc.length)return;
     const ct=cc.reduce((s,k)=>s+chA[k].sales,0);
-    rows+=`<tr class="category-group-header"><td colspan="${months.length+3}">▸ ${cat} — ${$(ct)}</td></tr>`;
+    rows+=`<tr class="channel-group-header"><td colspan="${months.length+3}">▸ ${cat} — ${$(ct)}</td></tr>`;
     cc.forEach(k=>{
       const vals=months.map(m=>activeRows(d).filter(r=>r.chain===k&&r.month===m).reduce((s,r)=>s+r.amount,0));
       const tot=vals.reduce((s,v)=>s+v,0),last=vals[vals.length-1],first=vals[0];

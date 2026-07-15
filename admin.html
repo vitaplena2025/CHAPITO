@@ -322,101 +322,101 @@ let newSKUData = {};                  // sku → {item_name, brand, landed_cost,
 // Sugerencias inteligentes basadas en el patrón del customer name
 function suggestClassification(customerName){
   const n = customerName.toLowerCase();
-  const suggest = {chain: customerName, category: "Otros", channel: "Grocery", status: "Active"};
+  const suggest = {chain: "Independiente", channel: "Otros", department: "Grocery", status: "Active"};
   
   // Ralph's Food Warehouse
   if (n.includes("ralph") && n.includes("food warehouse")){
     suggest.chain = "Ralph's Food Warehouse";
-    suggest.category = "Supermercados";
-    suggest.channel = "Grocery";
+    suggest.channel = "Supermercados";
+    suggest.department = "Grocery";
   }
   // Supermax
   else if (n.startsWith("supermax") && !n.startsWith("supermax dc") && !n.startsWith("deli-supermax")){
     suggest.chain = "Supermax";
-    suggest.category = "Supermercados";
-    suggest.channel = "Grocery";
+    suggest.channel = "Supermercados";
+    suggest.department = "Grocery";
   }
   // Deli-Supermax
   else if (n.startsWith("deli-supermax") || n.startsWith("deli supermax")){
     suggest.chain = "Supermax";
-    suggest.category = "Supermercados";
-    suggest.channel = "Deli";
+    suggest.channel = "Supermercados";
+    suggest.department = "Deli";
   }
   // Pueblo (incl Pueblo Plaza)
   else if (n.startsWith("pueblo") && !n.startsWith("deli-pueblo") && !n.startsWith("deli pueblo")){
     suggest.chain = "Pueblo";
-    suggest.category = "Supermercados";
-    suggest.channel = "Grocery";
+    suggest.channel = "Supermercados";
+    suggest.department = "Grocery";
   }
   else if (n.startsWith("deli-pueblo") || n.startsWith("deli pueblo")){
     suggest.chain = "Pueblo";
-    suggest.category = "Supermercados";
-    suggest.channel = "Deli";
+    suggest.channel = "Supermercados";
+    suggest.department = "Deli";
   }
   // Econo
   else if (n.startsWith("econo")){
     suggest.chain = "Econo";
-    suggest.category = "Supermercados";
-    suggest.channel = "Grocery";
+    suggest.channel = "Supermercados";
+    suggest.department = "Grocery";
   }
   // Selectos
   else if (n.startsWith("selectos") || n.includes("selectos")){
     suggest.chain = "Selectos";
-    suggest.category = "Supermercados";
-    suggest.channel = "Grocery";
+    suggest.channel = "Supermercados";
+    suggest.department = "Grocery";
   }
   // Amigo
   else if (n.startsWith("amigo") && !n.startsWith("deli-amigo") && !n.startsWith("deli amigo")){
     suggest.chain = "Amigo";
-    suggest.category = "Supermercados";
-    suggest.channel = "Grocery";
+    suggest.channel = "Supermercados";
+    suggest.department = "Grocery";
   }
   else if (n.startsWith("deli-amigo") || n.startsWith("deli amigo")){
     suggest.chain = "Amigo";
-    suggest.category = "Supermercados";
-    suggest.channel = "Deli";
+    suggest.channel = "Supermercados";
+    suggest.department = "Deli";
   }
   // Sam's Club
   else if (n.includes("sam") && n.includes("club")){
     suggest.chain = "Sam's Club";
-    suggest.category = "Club";
-    suggest.channel = "Grocery";
+    suggest.channel = "Club";
+    suggest.department = "Grocery";
   }
   // Costco
   else if (n.startsWith("costco")){
     suggest.chain = "Costco";
-    suggest.category = "Club";
-    suggest.channel = "Grocery";
+    suggest.channel = "Club";
+    suggest.department = "Grocery";
   }
   // Walmart
   else if (n.startsWith("walmart") || n.startsWith("wal-mart")){
     suggest.chain = "Walmart";
-    suggest.category = "Mass Market";
-    suggest.channel = "Grocery";
+    suggest.channel = "Mass Market";
+    suggest.department = "Grocery";
   }
   // Colmado
   else if (n.includes("colmado")){
     suggest.chain = "Independiente";
-    suggest.category = "Colmado";
-    suggest.channel = "Grocery";
+    suggest.channel = "Colmado";
+    suggest.department = "Grocery";
   }
   // Centro Natural
   else if (n.startsWith("centro natural") || n.includes("centro natural")){
     suggest.chain = "Centro Natural";
-    suggest.category = "Health Food";
-    suggest.channel = "Grocery";
+    suggest.channel = "Health Food";
+    suggest.department = "Grocery";
   }
   // La Hacienda
   else if (n.startsWith("la hacienda")){
     suggest.chain = "La Hacienda";
-    suggest.category = "Specialty Store";
-    suggest.channel = "Grocery";
+    suggest.channel = "Specialty Store";
+    suggest.department = "Grocery";
   }
   // Farmacias
   else if (n.includes("farmacia")){
     suggest.chain = customerName;
-    suggest.category = "Farmacias";
-    suggest.channel = "Grocery";
+    suggest.channel = "Farmacias";
+    suggest.department = "Grocery";
   }
   
   return suggest;
@@ -440,8 +440,8 @@ async function loadExistingData(){
   }
 }
 
-const CATEGORIES = ["Supermercados","Club","Mass Market","Reposteria","Otros","Specialty Store","Restaurante","Panadería","Health Food","Farmacias","Convenience Store","Colmado","Meal Prep","Coffee Shop / Cafetería"];
-const CHANNELS = ["Grocery","Deli","Food Service"];
+const CHANNELS = ["Supermercados","Club","Mass Market","Reposteria","Otros","Specialty Store","Restaurante","Panadería/Cafetería","Coffee Shop","Health Food","Farmacias","Convenience Store","Colmado","Meal Prep"];
+const DEPARTMENTS = ["Grocery","Deli","Food Service","Retail"];
 const STATUSES = ["Active","Dormant"];
 const BRANDS = ["Lakanto","Impact","Palmini","Nekstella","Töst","Green Cola","Other"];
 
@@ -800,7 +800,7 @@ function renderNewEntitiesUI(newCusts, newSkus, newReps){
     html += `<div class="entities-title">🏢 Clasificar ${newCusts.length} customers nuevos</div>`;
     html += `<div class="entities-hint">Las clasificaciones se auto-sugieren según el nombre. Edita si es necesario.</div>`;
     html += `<div class="table-scroll"><table class="editable-table">`;
-    html += `<thead><tr><th>Cliente</th><th># Filas</th><th>Chain</th><th>Categoría</th><th>Departamento</th><th>Rep Principal</th><th>Status</th></tr></thead><tbody>`;
+    html += `<thead><tr><th>Cliente</th><th># Filas</th><th>Chain</th><th>Canal</th><th>Departamento</th><th>Rep Principal</th><th>Status</th></tr></thead><tbody>`;
     newCusts.sort((a,b)=>a.localeCompare(b)).forEach(c => {
       const s = newCustomerClassifications[c];
       const n = parsedRows.filter(r => r.customer === c && r.tipo === 'normal').length;
@@ -808,8 +808,8 @@ function renderNewEntitiesUI(newCusts, newSkus, newReps){
       html += `<td class="col-cust"><strong>${c}</strong></td>`;
       html += `<td class="col-num">${n}</td>`;
       html += `<td><input type="text" value="${s.chain||''}" onchange="updateClassification('${escapeAttr(c)}','chain',this.value)" class="edit-input"></td>`;
-      html += `<td>${categorySelect(c, s.category)}</td>`;
       html += `<td>${channelSelect(c, s.channel)}</td>`;
+      html += `<td>${departmentSelect(c, s.department)}</td>`;
       html += `<td>${repSelect(c, s.primary_rep)}</td>`;
       html += `<td>${statusSelect(c, s.status)}</td>`;
       html += `</tr>`;
@@ -849,14 +849,14 @@ function renderNewEntitiesUI(newCusts, newSkus, newReps){
 
 function escapeAttr(s){ return String(s).replace(/'/g,"&#39;").replace(/"/g,"&quot;"); }
 
-function categorySelect(customer, current){
-  return `<select onchange="updateClassification('${escapeAttr(customer)}','category',this.value)" class="edit-input">
-    ${CATEGORIES.map(c => `<option value="${c}" ${c===current?'selected':''}>${c}</option>`).join('')}
-  </select>`;
-}
 function channelSelect(customer, current){
   return `<select onchange="updateClassification('${escapeAttr(customer)}','channel',this.value)" class="edit-input">
     ${CHANNELS.map(c => `<option value="${c}" ${c===current?'selected':''}>${c}</option>`).join('')}
+  </select>`;
+}
+function departmentSelect(customer, current){
+  return `<select onchange="updateClassification('${escapeAttr(customer)}','department',this.value)" class="edit-input">
+    ${DEPARTMENTS.map(c => `<option value="${c}" ${c===current?'selected':''}>${c}</option>`).join('')}
   </select>`;
 }
 function repSelect(customer, current){
@@ -981,8 +981,8 @@ async function executeUpload(){
       const custRows = newCustsList.map(([name, cls]) => ({
         customer_name: name,
         chain: cls.chain || name,
-        category: cls.category || 'Otros',
-        channel: cls.channel || 'Grocery',
+        channel: cls.channel || 'Otros',
+        department: cls.department || 'Grocery',
         primary_rep: cls.primary_rep || null,
         status: cls.status || 'Active',
         notes: `Auto-created from ${uploadedFile.name} on ${new Date().toISOString().slice(0,10)}`
