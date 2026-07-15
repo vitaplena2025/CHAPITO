@@ -351,11 +351,9 @@ body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',-app
 <!-- Tabs -->
 <div class="tabs-container">
   <div class="tab active" onclick="showTab('overview')"><span class="tab-icon">📊</span>Panorama del Negocio</div>
-  <div class="tab" onclick="showTab('categories')"><span class="tab-icon">🏪</span>Canales</div>
-  <div class="tab" onclick="showTab('chains')"><span class="tab-icon">🏢</span>Cadenas</div>
   <div class="tab" onclick="showTab('brands')"><span class="tab-icon">📦</span>Portafolio</div>
-  <div class="tab" onclick="showTab('reps')"><span class="tab-icon">👥</span>Equipo de Ventas</div>
   <div class="tab" onclick="showTab('customers')"><span class="tab-icon">📁</span>Clientes</div>
+  <div class="tab" onclick="showTab('reps')"><span class="tab-icon">👥</span>Equipo de Ventas</div>
   <div class="tab" onclick="showTab('monthly')"><span class="tab-icon">📅</span>Mensual</div>
   <div class="tab" onclick="showTab('voids')"><span class="tab-icon">🚫</span>Canceladas</div>
 </div>
@@ -457,6 +455,14 @@ body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',-app
 /* SECTIONS & TABLES */
 .section{margin-top:22px;}
 .section-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+.section-sub{font-size:12px;color:var(--text3);}
+.chain-row{cursor:pointer;}
+.chain-row:hover td{background:rgba(255,255,255,0.03);}
+.chain-arrow{display:inline-block;width:14px;color:var(--text3);font-size:10px;}
+.customer-detail-row{display:none;}
+.customer-detail-row.expanded{display:table-row;}
+.customer-detail-row td{padding-left:34px;font-size:12px;color:var(--text2);background:rgba(255,255,255,0.012);}
+.penetration-pill{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;}
 .section-title{font-size:15px;font-weight:700;color:var(--text);letter-spacing:-0.01em;}
 .table-card{
   background:var(--surface);
@@ -522,55 +528,6 @@ body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',-app
 </div>
 </div>
 
-<!-- 2. Canales (era Categorías) -->
-<div id="tab-categories" class="tab-panel">
-<div class="content">
-  <div class="contextual-filters" id="cf-categories">
-    <div class="contextual-title"><span class="icon">▸</span>Filtros de Canales</div>
-    <div class="contextual-selects">
-      <select id="cf-department" class="filter-select" onchange="applyFilters()">
-        <option value="all">Departamento: Todos</option>
-        <option value="Grocery">Grocery</option>
-        <option value="Deli">Deli</option>
-        <option value="Food Service">Food Service</option>
-      </select>
-    </div>
-  </div>
-  <div class="kpi-grid" id="kpi-categories"></div>
-  <div class="chart-grid chart-grid-2">
-    <div class="chart-card"><div class="chart-title"><span class="accent-dot"></span>Ventas por Canal ($)</div><canvas id="ch-cat-bar" height="300"></canvas></div>
-    <div class="chart-card"><div class="chart-title"><span class="accent-dot"></span>Mix por Departamento</div><canvas id="ch-channel-bar" height="300"></canvas></div>
-  </div>
-  <div class="section">
-    <div class="section-header"><div class="section-title">Performance por Canal</div></div>
-    <div class="table-card"><table class="data-table" id="tbl-category"></table></div>
-  </div>
-</div>
-</div>
-
-<!-- 3. Cadenas -->
-<div id="tab-chains" class="tab-panel">
-<div class="content">
-  <div class="contextual-filters" id="cf-chains">
-    <div class="contextual-title"><span class="icon">▸</span>Filtros de Cadenas</div>
-    <div class="contextual-selects">
-      <select id="cf-channel" class="filter-select" onchange="applyFilters()">
-        <option value="all">Canal: Todos</option>
-      </select>
-    </div>
-  </div>
-  <div class="kpi-grid" id="kpi-chains"></div>
-  <div class="chart-grid chart-grid-2">
-    <div class="chart-card"><div class="chart-title"><span class="accent-dot"></span>Top Cadenas por Ventas ($)</div><canvas id="ch-chain-bar" height="340"></canvas></div>
-    <div class="chart-card"><div class="chart-title"><span class="accent-dot"></span>Margen % por Cadena</div><canvas id="ch-chain-margin" height="340"></canvas></div>
-  </div>
-  <div class="section">
-    <div class="section-header"><div class="section-title">Performance por Cadena</div></div>
-    <div class="table-card"><table class="data-table" id="tbl-chain"></table></div>
-  </div>
-</div>
-</div>
-
 <!-- 4. Portafolio (era Marcas & SKUs) -->
 <div id="tab-brands" class="tab-panel">
 <div class="content">
@@ -612,14 +569,21 @@ body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',-app
 </div>
 </div>
 
-<!-- 6. Clientes -->
+<!-- 6. Clientes (consolidado: Canal + Cadena + Cliente) -->
 <div id="tab-customers" class="tab-panel">
 <div class="content">
   <div class="contextual-filters" id="cf-customers">
     <div class="contextual-title"><span class="icon">▸</span>Filtros de Clientes</div>
     <div class="contextual-selects">
-      <select id="cf-cust-channel" class="filter-select" onchange="applyFilters()">
+      <select id="cf-channel" class="filter-select" onchange="applyFilters()">
         <option value="all">Canal: Todos</option>
+      </select>
+      <select id="cf-department" class="filter-select" onchange="applyFilters()">
+        <option value="all">Departamento: Todos</option>
+        <option value="Grocery">Grocery</option>
+        <option value="Deli">Deli</option>
+        <option value="Food Service">Food Service</option>
+        <option value="Retail">Retail</option>
       </select>
       <select id="cf-status" class="filter-select" onchange="applyFilters()">
         <option value="all">Status: Todos</option>
@@ -630,11 +594,11 @@ body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',-app
   </div>
   <div class="kpi-grid" id="kpi-customers"></div>
   <div class="chart-grid chart-grid-2">
-    <div class="chart-card"><div class="chart-title"><span class="accent-dot"></span>Top 15 Clientes — Ventas ($)</div><canvas id="ch-cust-bar" height="300"></canvas></div>
-    <div class="chart-card"><div class="chart-title"><span class="accent-dot"></span>Top 15 Clientes — Cajas</div><canvas id="ch-cust-cases" height="300"></canvas></div>
+    <div class="chart-card"><div class="chart-title"><span class="accent-dot"></span>Ventas por Canal ($)</div><canvas id="ch-cat-bar" height="280"></canvas></div>
+    <div class="chart-card"><div class="chart-title"><span class="accent-dot"></span>Top Cadenas por Ventas ($)</div><canvas id="ch-chain-bar" height="280"></canvas></div>
   </div>
   <div class="section">
-    <div class="section-header"><div class="section-title">Ranking de Clientes</div></div>
+    <div class="section-header"><div class="section-title">Canal → Cadena → Cliente</div><div class="section-sub">Click en una cadena para ver sus clientes individuales</div></div>
     <div class="table-card"><table class="data-table" id="tbl-customer"></table></div>
   </div>
 </div>
@@ -699,7 +663,7 @@ const ANNUAL_GOAL_2026 = 1500000; // Meta anual $1.5M consolidada
 // ============================================================
 // STATE
 // ============================================================
-let SALES=[], CUSTOMERS={}, SKUS={}, COMPANIES=[], ENRICHED=[], FILTERED=[];
+let SALES=[], CUSTOMERS={}, SKUS={}, COMPANIES=[], ENRICHED=[], FILTERED=[], CHAIN_UNIVERSE={};
 // Multi-select period state: array of month numbers [1-12], or "all"
 let selectedMonths = "all";
 let pendingSelectedMonths = "all"; // buffer mientras el dropdown está abierto
@@ -724,6 +688,10 @@ async function loadData(){
 
     let {data:custs,error:e1}=await sb.from('customers').select('*');
     if(e1)throw e1; custs.forEach(c=>CUSTOMERS[c.customer_name]=c);
+
+    let {data:universe,error:eU}=await sb.from('chain_market_universe').select('*');
+    if(eU)console.warn('chain_market_universe no disponible:',eU.message);
+    else universe.forEach(u=>CHAIN_UNIVERSE[u.chain]=u);
 
     let {data:skus,error:e2}=await sb.from('skus').select('*');
     if(e2)throw e2; skus.forEach(s=>SKUS[s.sku]=s);
@@ -804,7 +772,6 @@ function initFilters(){
   sel('cf-channel',[...new Set(ENRICHED.map(r=>r.channel))].filter(x=>x).sort());
   sel('cf-brand',[...new Set(ENRICHED.map(r=>r.brand))].filter(x=>x&&x!=='Unknown').sort());
   sel('cf-sku',[...new Set(ENRICHED.map(r=>r.sku))].filter(x=>x).sort());
-  sel('cf-cust-channel',[...new Set(ENRICHED.map(r=>r.channel))].filter(x=>x).sort());
   
   // Setup multi-select de meses
   availableMonths = [...new Set(ENRICHED.map(r=>r.month))].filter(x=>x).sort((a,b)=>a-b);
@@ -981,7 +948,6 @@ function applyFilters(){
   const cfCat=document.getElementById("cf-channel")?.value||"all";
   const cfBrand=document.getElementById("cf-brand")?.value||"all";
   const cfSku=document.getElementById("cf-sku")?.value||"all";
-  const cfCustCat=document.getElementById("cf-cust-channel")?.value||"all";
   const cfStatus=document.getElementById("cf-status")?.value||"all";
   
   // Month filter: selectedMonths is either "all" or an array of month numbers
@@ -1000,7 +966,6 @@ function applyFilters(){
     (cfCat==="all"||x.channel===cfCat)&&
     (cfBrand==="all"||x.brand===cfBrand)&&
     (cfSku==="all"||x.sku===cfSku)&&
-    (cfCustCat==="all"||x.channel===cfCustCat)&&
     (cfStatus==="all"||x.status===cfStatus)
   );
   cascadeFilterOptions();
@@ -1012,7 +977,7 @@ function applyFilters(){
 function cascadeFilterOptions(){
   const getVal=id=>document.getElementById(id)?.value||"all";
   const co=getVal("f-company"),r=getVal("f-rep"),ch=getVal("f-chain");
-  const cfChan=getVal("cf-department"),cfCat=getVal("cf-channel"),cfBrand=getVal("cf-brand"),cfSku=getVal("cf-sku"),cfCustCat=getVal("cf-cust-channel"),cfStatus=getVal("cf-status");
+  const cfChan=getVal("cf-department"),cfCat=getVal("cf-channel"),cfBrand=getVal("cf-brand"),cfSku=getVal("cf-sku"),cfStatus=getVal("cf-status");
   
   // Function: filter ENRICHED by all filters EXCEPT the one we're computing options for
   function subsetExcept(excludeId){
@@ -1025,7 +990,6 @@ function cascadeFilterOptions(){
       (excludeId==="cf-channel"||cfCat==="all"||x.channel===cfCat)&&
       (excludeId==="cf-brand"||cfBrand==="all"||x.brand===cfBrand)&&
       (excludeId==="cf-sku"||cfSku==="all"||x.sku===cfSku)&&
-      (excludeId==="cf-cust-channel"||cfCustCat==="all"||x.channel===cfCustCat)&&
       (excludeId==="cf-status"||cfStatus==="all"||x.status===cfStatus)
     );
   }
@@ -1085,13 +1049,13 @@ function cascadeFilterOptions(){
   if(document.getElementById("cf-sku")){
     updateSelect("cf-sku",[...new Set(subsetExcept("cf-sku").map(r=>r.sku))].filter(x=>x).sort(),"SKU: Todos");
   }
-  if(document.getElementById("cf-cust-channel")){
-    updateSelect("cf-cust-channel",[...new Set(subsetExcept("cf-cust-channel").map(r=>r.channel))].filter(x=>x).sort(),"Canal: Todos");
+  if(document.getElementById("cf-department")){
+    updateSelect("cf-department",[...new Set(subsetExcept("cf-department").map(r=>r.department))].filter(x=>x).sort(),"Departamento: Todos");
   }
 }
 
 function resetFilters(){
-  ["f-company","f-rep","f-chain","cf-department","cf-channel","cf-brand","cf-sku","cf-cust-channel","cf-status"].forEach(id=>{const el=document.getElementById(id);if(el)el.value="all";});
+  ["f-company","f-rep","f-chain","cf-department","cf-channel","cf-brand","cf-sku","cf-status"].forEach(id=>{const el=document.getElementById(id);if(el)el.value="all";});
   selectedMonths = "all";
   pendingSelectedMonths = "all";
   updatePeriodLabel();
@@ -1163,6 +1127,36 @@ const mc=m=>m>=40?"#10b981":m>=30?"#F4C124":"#ef4444";
 const mb=m=>m>=40?"badge-green":m>=30?"badge-yellow":"badge-red";
 const mpill=m=>`<span class="pill" style="background:${mc(m)}22;color:${mc(m)}">${P(m)}</span>`;
 function activeMonths(d){return[...new Set(activeRows(d).map(r=>r.month))].sort((a,b)=>a-b);}
+
+// Penetración por cadena: localidades únicas (Active) donde vendemos vs. universo total de mercado
+// Normaliza por número de tienda (#NNN al final del nombre) para no duplicar Grocery/Deli de la misma localidad
+function computePenetration(chain){
+  const universe=CHAIN_UNIVERSE[chain];
+  if(!universe||!universe.total_locations)return null;
+  const locs=new Set();
+  Object.values(CUSTOMERS).forEach(c=>{
+    if(c.chain===chain&&c.status==='Active'){
+      const m=(c.customer_name||'').match(/#(\w+)$/);
+      locs.add(m?m[1]:c.customer_name);
+    }
+  });
+  const sold=locs.size,total=universe.total_locations;
+  return {sold,total,pct:total>0?(sold/total*100):0};
+}
+function penetrationPill(chain){
+  const p=computePenetration(chain);
+  if(!p)return `<span style="color:var(--text3)">—</span>`;
+  const color=p.pct>=90?'#10b981':p.pct>=40?'#F4C124':'#ef4444';
+  return `<span class="penetration-pill" style="background:${color}22;color:${color}" title="${p.sold} de ${p.total} localidades">${p.sold}/${p.total} · ${P(p.pct)}</span>`;
+}
+function toggleChainRows(idx){
+  const rows=document.querySelectorAll('.cd-'+idx);
+  const arrow=document.getElementById('arrow-'+idx);
+  if(!rows.length)return;
+  const opening=!rows[0].classList.contains('expanded');
+  rows.forEach(r=>r.classList.toggle('expanded',opening));
+  if(arrow)arrow.textContent=opening?'▾':'▸';
+}
 
 const charts={};
 function mkChart(id,cfg){if(charts[id])charts[id].destroy();const c=document.getElementById(id);if(!c)return;charts[id]=new Chart(c,cfg);}
@@ -1378,53 +1372,6 @@ function renderOverview(){
   });
 }
 
-function renderCategories(){
-  const d=FILTERED,cA=agg(d,r=>r.channel),chA=agg(d,r=>r.department);
-  const ts=Object.values(cA).reduce((s,v)=>s+v.sales,0);
-  const cK=Object.keys(cA).filter(k=>cA[k].sales>0).sort((a,b)=>cA[b].sales-cA[a].sales);
-  const topCat=cK[0]||"";
-  document.getElementById("kpi-categories").innerHTML=`
-    <div class="kpi" style="--kpi-color:#34A852"><div class="kpi-label">Canales Activos</div><div class="kpi-value">${cK.length}</div></div>
-    <div class="kpi" style="--kpi-color:#6366f1"><div class="kpi-label">#1 Canal</div><div class="kpi-value" style="font-size:17px">${topCat}</div><div class="kpi-sub">${$(cA[topCat]?.sales||0)} · ${P((cA[topCat]?.sales||0)/ts*100)}</div></div>
-    <div class="kpi" style="--kpi-color:#F4C124"><div class="kpi-label">Departamentos</div><div class="kpi-value">${Object.keys(chA).length}</div></div>
-    <div class="kpi" style="--kpi-color:#ec4899"><div class="kpi-label">Ventas Totales</div><div class="kpi-value">${$(ts)}</div></div>`;
-  mkChart("ch-cat-bar",{type:"bar",data:{labels:cK,datasets:[{label:"Ventas $",data:cK.map(k=>cA[k].sales),backgroundColor:cK.map(k=>CHANNEL_COLORS[k]||"#64748b"),borderRadius:5}]},options:{...xDollar(),indexAxis:"y",responsive:true,plugins:{legend:{display:false}}}});
-  const chK=Object.keys(chA);
-  mkChart("ch-channel-bar",{type:"bar",data:{labels:chK,datasets:[{label:"Ventas $",data:chK.map(k=>chA[k].sales),backgroundColor:chK.map(k=>DEPARTMENT_COLORS[k]||"#64748b"),borderRadius:7}]},options:{...yDollar(),responsive:true,plugins:{legend:{display:false}}}});
-  let rows="";
-  cK.forEach(k=>{
-    const v=cA[k],pct=v.sales/ts*100,color=CHANNEL_COLORS[k]||"#64748b";
-    rows+=`<tr><td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${color};margin-right:8px"></span><span class="bold">${k}</span></td><td class="r bold">${$(v.sales)}</td><td class="r"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div><span>${P(pct)}</span></div></td><td class="r">${v.cases.toLocaleString()}</td><td class="r">${v.orders}</td><td class="r">${v.customers}</td><td class="r">${$(v.gp)}</td><td class="r">${mpill(v.margin)}</td></tr>`;
-  });
-  document.getElementById("tbl-category").innerHTML=`<thead><tr><th>Canal</th><th class="r">Ventas $</th><th class="r">% Mix</th><th class="r">Cajas</th><th class="r">Órdenes</th><th class="r">Clientes</th><th class="r">GP $</th><th class="r">Margen</th></tr></thead><tbody>${rows}</tbody>`;
-}
-
-function renderChains(){
-  const d=FILTERED,chA=agg(d,r=>r.chain);
-  const ts=Object.values(chA).reduce((s,v)=>s+v.sales,0);
-  const chK=Object.keys(chA).filter(k=>chA[k].sales>0&&k!=='—').sort((a,b)=>chA[b].sales-chA[a].sales);
-  const top1=chK[0]||"",top1Margin=chK.length?chK.reduce((a,k)=>chA[k].margin>chA[a].margin?k:a,chK[0]):"";
-  document.getElementById("kpi-chains").innerHTML=`
-    <div class="kpi" style="--kpi-color:#34A852"><div class="kpi-label">Cadenas Activas</div><div class="kpi-value">${chK.length}</div></div>
-    <div class="kpi" style="--kpi-color:#6366f1"><div class="kpi-label">#1 Cadena</div><div class="kpi-value" style="font-size:17px">${top1}</div><div class="kpi-sub">${$(chA[top1]?.sales||0)}</div></div>
-    <div class="kpi" style="--kpi-color:#F4C124"><div class="kpi-label">Mejor Margen</div><div class="kpi-value" style="font-size:17px">${top1Margin}</div><div class="kpi-sub">${P(chA[top1Margin]?.margin||0)}</div></div>
-    <div class="kpi" style="--kpi-color:#ec4899"><div class="kpi-label">Ventas Totales</div><div class="kpi-value">${$(ts)}</div></div>`;
-  const chainCat={};Object.values(CUSTOMERS).forEach(c=>{if(!chainCat[c.chain])chainCat[c.chain]=c.channel;});
-  mkChart("ch-chain-bar",{type:"bar",data:{labels:chK,datasets:[{label:"Ventas $",data:chK.map(k=>chA[k].sales),backgroundColor:chK.map(k=>CHANNEL_COLORS[chainCat[k]]||"#64748b"),borderRadius:5}]},options:{...xDollar(),indexAxis:"y",responsive:true,plugins:{legend:{display:false}}}});
-  mkChart("ch-chain-margin",{type:"bar",data:{labels:chK,datasets:[{label:"Margen %",data:chK.map(k=>chA[k].margin),backgroundColor:chK.map(k=>mc(chA[k].margin)),borderRadius:5}]},options:{responsive:true,indexAxis:"y",plugins:{legend:{display:false}},scales:{x:{max:65,ticks:{color:"#94a3b8",font:{family:"Plus Jakarta Sans"},callback:v=>v+"%"},grid:{color:"rgba(255,255,255,.06)"}},y:{ticks:{color:"#94a3b8",font:{family:"Plus Jakarta Sans"}},grid:{color:"rgba(255,255,255,.04)"}}}}});
-  let rows="";
-  CHANNEL_ORDER.forEach(cat=>{
-    const catChains=chK.filter(k=>chainCat[k]===cat);if(!catChains.length)return;
-    const catTotal=catChains.reduce((s,k)=>s+chA[k].sales,0);
-    rows+=`<tr class="channel-group-header"><td colspan="8">▸ ${cat} — ${$(catTotal)} (${P(catTotal/ts*100)})</td></tr>`;
-    catChains.forEach(k=>{
-      const v=chA[k],pct=v.sales/ts*100,color=CHANNEL_COLORS[cat]||"#64748b";
-      rows+=`<tr><td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${color};margin-right:8px"></span><span class="bold">${k}</span></td><td class="r bold">${$(v.sales)}</td><td class="r"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div><span>${P(pct)}</span></div></td><td class="r">${v.cases.toLocaleString()}</td><td class="r">${v.orders}</td><td class="r">${v.customers}</td><td class="r">${$(v.gp)}</td><td class="r">${mpill(v.margin)}</td></tr>`;
-    });
-  });
-  document.getElementById("tbl-chain").innerHTML=`<thead><tr><th>Cadena</th><th class="r">Ventas $</th><th class="r">% Mix</th><th class="r">Cajas</th><th class="r">Órdenes</th><th class="r">Clientes</th><th class="r">GP $</th><th class="r">Margen</th></tr></thead><tbody>${rows}</tbody>`;
-}
-
 function renderBrands(){
   const d=FILTERED,bA=agg(d,r=>r.brand),ts=Object.values(bA).reduce((s,v)=>s+v.sales,0);
   const bK=Object.keys(bA).filter(k=>bA[k].sales>0&&k!=='Unknown').sort((a,b)=>bA[b].sales-bA[a].sales);
@@ -1464,25 +1411,69 @@ function renderReps(){
   document.getElementById("tbl-rep").innerHTML=`<thead><tr><th>#</th><th>Representante</th><th class="r">Ventas $</th><th class="r">% Mix</th><th class="r">Cajas</th><th class="r">Órdenes</th><th class="r">Clientes</th><th class="r">GP $</th><th class="r">Margen</th></tr></thead><tbody>${rows}</tbody>`;
 }
 
-function renderCustomers(){
-  const d=FILTERED,cA=agg(d,r=>r.customer_name);
+function renderClients(){
+  const d=FILTERED;
+  const cA=agg(d,r=>r.channel);           // nivel Canal
+  const chA=agg(d,r=>r.chain);            // nivel Cadena
+  const custA=agg(d,r=>r.customer_name);  // nivel Cliente
   const ts=Object.values(cA).reduce((s,v)=>s+v.sales,0);
+  const totalGp=Object.values(cA).reduce((s,v)=>s+v.gp,0);
+  const avgMargin=ts>0?totalGp/ts*100:0;
+
   const cK=Object.keys(cA).filter(k=>cA[k].sales>0).sort((a,b)=>cA[b].sales-cA[a].sales);
-  const top15=cK.slice(0,15);
+  const chK=Object.keys(chA).filter(k=>chA[k].sales>0&&k!=='—').sort((a,b)=>chA[b].sales-chA[a].sales);
+  const custK=Object.keys(custA).filter(k=>custA[k].sales>0);
+
   document.getElementById("kpi-customers").innerHTML=`
-    <div class="kpi" style="--kpi-color:#34A852"><div class="kpi-label">Clientes Activos</div><div class="kpi-value">${cK.length}</div></div>
-    <div class="kpi" style="--kpi-color:#6366f1"><div class="kpi-label">Top Cliente</div><div class="kpi-value" style="font-size:15px">${cK[0]?cK[0].slice(0,22):"—"}</div><div class="kpi-sub">${$(cA[cK[0]]?.sales||0)}</div></div>
-    <div class="kpi" style="--kpi-color:#F4C124"><div class="kpi-label">Top 15 % del Total</div><div class="kpi-value">${P(top15.reduce((s,k)=>s+cA[k].sales,0)/ts*100)}</div></div>
-    <div class="kpi" style="--kpi-color:#ec4899"><div class="kpi-label">Ticket Promedio</div><div class="kpi-value">${$(ts/Math.max(cK.length,1))}</div></div>`;
-  const catOf=c=>(CUSTOMERS[c]?.channel||"Otros");
-  mkChart("ch-cust-bar",{type:"bar",data:{labels:top15.map(k=>k.length>24?k.slice(0,24)+"…":k),datasets:[{label:"Ventas $",data:top15.map(k=>cA[k].sales),backgroundColor:top15.map(k=>CHANNEL_COLORS[catOf(k)]||"#64748b"),borderRadius:4}]},options:{...xDollar(),indexAxis:"y",responsive:true,plugins:{legend:{display:false}}}});
-  mkChart("ch-cust-cases",{type:"bar",data:{labels:top15.map(k=>k.length>24?k.slice(0,24)+"…":k),datasets:[{label:"Cajas",data:top15.map(k=>cA[k].cases),backgroundColor:top15.map(k=>(CHANNEL_COLORS[catOf(k)]||"#64748b")+"aa"),borderRadius:4}]},options:{...CD,indexAxis:"y",responsive:true,plugins:{legend:{display:false}}}});
-  let rows=cK.map((k,i)=>{
-    const v=cA[k],pct=v.sales/ts*100,m=CUSTOMERS[k]||{};
-    const cat=m.channel||'—',ch=m.department||'—',chain=m.chain||'—',rep=m.primary_rep||'—',st=m.status||'Active',cc=CHANNEL_COLORS[cat]||"#64748b";
-    return`<tr><td style="color:${i<3?"#F4C124":"#475569"};font-weight:600">${i+1}</td><td class="bold">${k}</td><td>${chain}</td><td><span class="pill" style="background:${cc}22;color:${cc}">${cat}</span></td><td>${ch}</td><td>${rep}</td><td><span class="status-pill ${st==='Active'?'status-active':'status-dormant'}">${st}</span></td><td class="r bold">${$(v.sales)}</td><td class="r"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${Math.min(pct*6,100)}%"></div></div><span>${P(pct)}</span></div></td><td class="r">${v.cases.toLocaleString()}</td><td class="r">${$(v.gp)}</td><td class="r">${mpill(v.margin)}</td></tr>`;
-  }).join("");
-  document.getElementById("tbl-customer").innerHTML=`<thead><tr><th>#</th><th>Cliente</th><th>Cadena</th><th>Canal</th><th>Departamento</th><th>Rep</th><th>Status</th><th class="r">Ventas $</th><th class="r">% Mix</th><th class="r">Cajas</th><th class="r">GP $</th><th class="r">Margen</th></tr></thead><tbody>${rows}</tbody>`;
+    <div class="kpi" style="--kpi-color:#34A852"><div class="kpi-label">Canales Activos</div><div class="kpi-value">${cK.length}</div></div>
+    <div class="kpi" style="--kpi-color:#6366f1"><div class="kpi-label">Cadenas Activas</div><div class="kpi-value">${chK.length}</div></div>
+    <div class="kpi" style="--kpi-color:#F4C124"><div class="kpi-label">Clientes Activos</div><div class="kpi-value">${custK.length}</div></div>
+    <div class="kpi" style="--kpi-color:#ec4899"><div class="kpi-label">Ventas Totales</div><div class="kpi-value">${$(ts)}</div></div>
+    <div class="kpi" style="--kpi-color:#10b981"><div class="kpi-label">Margen % Promedio</div><div class="kpi-value">${P(avgMargin)}</div></div>`;
+
+  mkChart("ch-cat-bar",{type:"bar",data:{labels:cK,datasets:[{label:"Ventas $",data:cK.map(k=>cA[k].sales),backgroundColor:cK.map(k=>CHANNEL_COLORS[k]||"#64748b"),borderRadius:5}]},options:{...xDollar(),indexAxis:"y",responsive:true,plugins:{legend:{display:false}}}});
+
+  const chTop=chK.slice(0,20);
+  const chainCat={};Object.values(CUSTOMERS).forEach(c=>{if(!chainCat[c.chain])chainCat[c.chain]=c.channel;});
+  mkChart("ch-chain-bar",{type:"bar",data:{labels:chTop,datasets:[{label:"Ventas $",data:chTop.map(k=>chA[k].sales),backgroundColor:chTop.map(k=>CHANNEL_COLORS[chainCat[k]]||"#64748b"),borderRadius:5}]},options:{...xDollar(),indexAxis:"y",responsive:true,plugins:{legend:{display:false}}}});
+
+  // Tabla jerárquica: Canal (header) > Cadena (fila expandible) > Cliente (detalle)
+  let rows="",chainIdx=0;
+  CHANNEL_ORDER.forEach(cat=>{
+    const catChains=chK.filter(k=>chainCat[k]===cat);
+    if(!catChains.length)return;
+    const catTotal=catChains.reduce((s,k)=>s+chA[k].sales,0);
+    rows+=`<tr class="channel-group-header"><td colspan="8">▸ ${cat} — ${$(catTotal)} (${P(catTotal/ts*100)})</td></tr>`;
+    catChains.forEach(k=>{
+      const v=chA[k],pct=v.sales/ts*100,color=CHANNEL_COLORS[cat]||"#64748b",idx=chainIdx++;
+      rows+=`<tr class="chain-row" onclick="toggleChainRows(${idx})">
+        <td><span class="chain-arrow" id="arrow-${idx}">▸</span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${color};margin-right:6px"></span><span class="bold">${k}</span></td>
+        <td class="r bold">${$(v.sales)}</td>
+        <td class="r"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div><span>${P(pct)}</span></div></td>
+        <td class="r">${v.cases.toLocaleString()}</td>
+        <td class="r">${$(v.gp)}</td>
+        <td class="r">${mpill(v.margin)}</td>
+        <td class="r">${penetrationPill(k)}</td>
+        <td class="r">${v.customers} clientes</td>
+      </tr>`;
+      // Clientes individuales de esta cadena (colapsados por default)
+      const custOfChain=Object.keys(custA).filter(cn=>(CUSTOMERS[cn]?.chain)===k&&custA[cn].sales>0).sort((a,b)=>custA[b].sales-custA[a].sales);
+      custOfChain.forEach(cn=>{
+        const cv=custA[cn],m=CUSTOMERS[cn]||{},st=m.status||'Active',rep=m.primary_rep||'—',dept=m.department||'—';
+        rows+=`<tr class="customer-detail-row cd-${idx}">
+          <td>${cn}</td>
+          <td class="r">${$(cv.sales)}</td>
+          <td class="r">${P(cv.sales/ts*100)}</td>
+          <td class="r">${cv.cases.toLocaleString()}</td>
+          <td class="r">${$(cv.gp)}</td>
+          <td class="r">${mpill(cv.margin)}</td>
+          <td class="r">—</td>
+          <td class="r"><span class="status-pill ${st==='Active'?'status-active':'status-dormant'}">${st}</span> ${dept} · ${rep}</td>
+        </tr>`;
+      });
+    });
+  });
+  document.getElementById("tbl-customer").innerHTML=`<thead><tr><th>Canal / Cadena / Cliente</th><th class="r">Ventas $</th><th class="r">% Mix</th><th class="r">Cajas</th><th class="r">GP $</th><th class="r">Margen</th><th class="r">Penetración</th><th class="r">Detalle</th></tr></thead><tbody>${rows}</tbody>`;
 }
 
 function renderMonthly(){
@@ -1536,8 +1527,8 @@ function renderVoids(){
 // ============================================================
 // TAB SWITCHING
 // ============================================================
-const TABS={overview:renderOverview,categories:renderCategories,chains:renderChains,brands:renderBrands,reps:renderReps,customers:renderCustomers,monthly:renderMonthly,voids:renderVoids};
-const TAB_LIST=["overview","categories","chains","brands","reps","customers","monthly","voids"];
+const TABS={overview:renderOverview,brands:renderBrands,reps:renderReps,customers:renderClients,monthly:renderMonthly,voids:renderVoids};
+const TAB_LIST=["overview","brands","reps","customers","monthly","voids"];
 let activeTab="overview";
 function showTab(name){
   document.querySelectorAll(".tab-panel").forEach(p=>p.classList.remove("active"));
