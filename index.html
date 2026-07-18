@@ -654,8 +654,14 @@ th .info-tip::after{top:auto;bottom:100%;border-top-color:transparent;border-bot
     <div class="chart-card"><div class="chart-title"><span class="accent-dot"></span>Ventas &amp; GP por Marca ($)</div><canvas id="ch-brand-bar" height="210"></canvas></div>
     <div class="chart-card"><div class="chart-title"><span class="accent-dot"></span>Mix de Marcas</div><div style="display:flex;align-items:center;gap:16px"><div style="flex:1;min-width:0"><canvas id="ch-brand-pie" height="210"></canvas></div><div id="brand-pie-legend" style="display:flex;flex-direction:column;gap:10px;flex-shrink:0"></div></div></div>
   </div>
-  <div class="chart-grid chart-grid-6040">
-    <div class="chart-card"><div class="chart-title"><span class="accent-dot"></span>Margen % por Marca</div><canvas id="ch-brand-margin" height="190"></canvas></div>
+  <div class="chart-grid" style="grid-template-columns:1fr">
+    <div class="chart-card"><div class="chart-title"><span class="accent-dot"></span>Margen % por Marca</div><canvas id="ch-brand-margin" height="140"></canvas></div>
+  </div>
+  <div class="chart-grid chart-grid-2">
+    <div class="chart-card">
+      <div class="chart-title"><span class="accent-dot"></span>SKUs de Alta Rotación<span class="info-icon">i<span class="info-tip">Los 8 SKUs con más órdenes únicas en el período — tus productos de movimiento más constante.</span></span></div>
+      <div class="table-card" style="border:none;background:transparent;margin-top:2px"><table class="data-table" id="tbl-fast-sku"></table></div>
+    </div>
     <div class="chart-card">
       <div class="chart-title"><span class="accent-dot"></span>SKUs de Baja Rotación<span class="info-icon">i<span class="info-tip">Los 8 SKUs con menos órdenes únicas, entre los que tuvieron al menos 1 venta en el período — candidatos a revisar, relanzar con promoción, o descontinuar.</span></span></div>
       <div class="table-card" style="border:none;background:transparent;margin-top:2px"><table class="data-table" id="tbl-slow-sku"></table></div>
@@ -786,9 +792,9 @@ const BRAND_LOGOS={
 // Devuelve <img> del logo si existe, o un dot de color como fallback
 function brandBadge(brand,size){
   size=size||18;
-  if(BRAND_LOGOS[brand]) return `<img src="${BRAND_LOGOS[brand]}" alt="${brand}" style="height:${size}px;width:auto;vertical-align:middle;display:inline-block">`;
+  if(BRAND_LOGOS[brand]) return `<img src="${BRAND_LOGOS[brand]}" alt="${brand}" title="${brand}" style="height:${size}px;width:auto;vertical-align:middle;display:inline-block">`;
   const bc=BRAND_COLORS[brand]||"#64748b";
-  return `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${bc};vertical-align:middle"></span>`;
+  return `<span title="${brand}" style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${bc};vertical-align:middle"></span>`;
 }
 const REP_COLORS=['#34A852','#6366f1','#F4C124','#ec4899','#10b981','#f97316','#a855f7','#06b6d4','#84cc16'];
 const CHANNEL_ORDER=['Club','Mass Market','Supermercados','Specialty Store','Restaurantes','Reposteria','Panadería/Cafetería','Coffee Shop','Health Foods','Farmacias','Gasolineras','Colmado','Meal Prep','Otros'];
@@ -1407,8 +1413,8 @@ const TT_PCT_DOLLAR = {
   bodyFont:{family:"Plus Jakarta Sans"}
 };
 const CD={plugins:{legend:{labels:{color:"#94a3b8",font:{family:"Plus Jakarta Sans",size:12}}}},scales:{x:{ticks:{color:"#94a3b8",font:{family:"Plus Jakarta Sans"}},grid:{color:"rgba(255,255,255,.04)"}},y:{ticks:{color:"#94a3b8",font:{family:"Plus Jakarta Sans"}},grid:{color:"rgba(255,255,255,.06)"}}}};
-const yDollar=()=>({...CD,scales:{x:CD.scales.x,y:{...CD.scales.y,ticks:{color:"#94a3b8",font:{family:"Plus Jakarta Sans"},callback:v=>"$"+v.toLocaleString()}}}});
-const xDollar=()=>({...CD,scales:{y:CD.scales.y,x:{...CD.scales.x,ticks:{color:"#94a3b8",font:{family:"Plus Jakarta Sans"},callback:v=>"$"+v.toLocaleString()}}}});
+const yDollar=()=>({...CD,plugins:{...CD.plugins,tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label||"Ventas"}: ${$(ctx.parsed.y)}`}}},scales:{x:CD.scales.x,y:{...CD.scales.y,ticks:{color:"#94a3b8",font:{family:"Plus Jakarta Sans"},callback:v=>"$"+v.toLocaleString()}}}});
+const xDollar=()=>({...CD,plugins:{...CD.plugins,tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label||"Ventas"}: ${$(ctx.parsed.x)}`}}},scales:{y:CD.scales.y,x:{...CD.scales.x,ticks:{color:"#94a3b8",font:{family:"Plus Jakarta Sans"},callback:v=>"$"+v.toLocaleString()}}}});
 
 // ============================================================
 // EXECUTIVE SCORECARD HELPERS
@@ -1757,20 +1763,24 @@ function renderBrands(){
   const avgMargin=ts>0?totalGp/ts*100:0;
   const bK=Object.keys(bA).filter(k=>bA[k].sales>0&&k!=='Unknown').sort((a,b)=>bA[b].sales-bA[a].sales);
   const top=bK[0]||"";
+  const skusVendidos=new Set(activeRows(d).filter(r=>r.sku).map(r=>r.sku)).size;
+  const skusTotal=Object.keys(SKUS).length;
+  const skuPct=skusTotal>0?skusVendidos/skusTotal*100:0;
   document.getElementById("kpi-brands").innerHTML=`
     <div class="kpi" style="--kpi-color:#34A852"><div class="kpi-label">Marcas Activas</div><div class="kpi-value">${bK.length}</div></div>
-    <div class="kpi" style="--kpi-color:#6366f1"><div class="kpi-label">#1 Marca</div><div class="kpi-value" style="font-size:18px;display:flex;align-items:center;gap:8px">${top?brandBadge(top,22):""}${top}</div><div class="kpi-sub">${$(bA[top]?.sales||0)}</div></div>
+    <div class="kpi" style="--kpi-color:#6366f1"><div class="kpi-label">#1 Marca</div><div class="kpi-value" style="font-size:18px;display:flex;align-items:center;gap:8px">${top?brandBadge(top,26):""}</div><div class="kpi-sub">${$(bA[top]?.sales||0)}</div></div>
     <div class="kpi" style="--kpi-color:#F4C124"><div class="kpi-label">Margen Promedio${infoIcon("GP total ÷ Ventas totales del portafolio filtrado (por Marca/SKU/Canal). Ponderado por venta, no promedio simple entre marcas.")}</div><div class="kpi-value">${P(avgMargin)}</div></div>
+    <div class="kpi" style="--kpi-color:#8b5cf6"><div class="kpi-label">SKUs Vendidos${infoIcon("SKUs con al menos 1 venta en el período filtrado ÷ Total de SKUs en el catálogo — qué porción de tu portafolio realmente se movió.")}</div><div class="kpi-value">${skusVendidos}/${skusTotal}</div><div class="kpi-sub">${P(skuPct)} del catálogo</div></div>
     <div class="kpi" style="--kpi-color:#ec4899"><div class="kpi-label">Ventas Totales</div><div class="kpi-value">${$(ts)}</div></div>`;
-  mkChart("ch-brand-bar",{type:"bar",data:{labels:bK,datasets:[{label:"Ventas",data:bK.map(k=>bA[k].sales),backgroundColor:bK.map(k=>BRAND_COLORS[k]||"#64748b"),borderRadius:6},{label:"GP",data:bK.map(k=>bA[k].gp),backgroundColor:bK.map(k=>(BRAND_COLORS[k]||"#64748b")+"88"),borderRadius:6}]},options:{...yDollar(),responsive:true}});
-  mkChart("ch-brand-pie",{type:"doughnut",data:{labels:bK,datasets:[{data:bK.map(k=>bA[k].sales),backgroundColor:bK.map(k=>BRAND_COLORS[k]||"#64748b"),borderWidth:2,borderColor:"#111827"}]},options:{responsive:true,cutout:"62%",plugins:{legend:{display:false}}}});
+  mkChart("ch-brand-bar",{type:"bar",data:{labels:bK,datasets:[{label:"Ventas",data:bK.map(k=>bA[k].sales),backgroundColor:bK.map(k=>BRAND_COLORS[k]||"#64748b"),borderRadius:6},{label:"GP",data:bK.map(k=>bA[k].gp),backgroundColor:bK.map(k=>(BRAND_COLORS[k]||"#64748b")+"88"),borderRadius:6}]},options:{...yDollar(),responsive:true,plugins:{...yDollar().plugins,tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${$(ctx.parsed.y)}`}}}}});
+  mkChart("ch-brand-pie",{type:"doughnut",data:{labels:bK,datasets:[{data:bK.map(k=>bA[k].sales),backgroundColor:bK.map(k=>BRAND_COLORS[k]||"#64748b"),borderWidth:2,borderColor:"#111827"}]},options:{responsive:true,cutout:"62%",plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${$(ctx.parsed)}`}}}}});
   document.getElementById("brand-pie-legend").innerHTML = bK.map(k=>{
     const pct=ts>0?bA[k].sales/ts*100:0;
     return `<div style="display:flex;align-items:center;gap:8px">${brandBadge(k,16)}<span style="font-size:11.5px;color:var(--text2);font-weight:600">${P(pct)}</span></div>`;
   }).join("");
 
   // Margen % por Marca (nuevo) — mismos umbrales de color que el resto del dashboard (mc)
-  mkChart("ch-brand-margin",{type:"bar",data:{labels:bK,datasets:[{label:"Margen %",data:bK.map(k=>bA[k].margin),backgroundColor:bK.map(k=>mc(bA[k].margin)),borderRadius:6}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{max:65,ticks:{color:"#94a3b8",font:{family:"Plus Jakarta Sans"},callback:v=>v+"%"},grid:{color:"rgba(255,255,255,.06)"}},x:{ticks:{color:"#94a3b8",font:{family:"Plus Jakarta Sans"}},grid:{color:"rgba(255,255,255,.04)"}}}}});
+  mkChart("ch-brand-margin",{type:"bar",data:{labels:bK,datasets:[{label:"Margen %",data:bK.map(k=>bA[k].margin),backgroundColor:bK.map(k=>mc(bA[k].margin)),borderRadius:6}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`Margen: ${ctx.parsed.y.toFixed(1)}%`}}},scales:{y:{max:65,ticks:{color:"#94a3b8",font:{family:"Plus Jakarta Sans"},callback:v=>v+"%"},grid:{color:"rgba(255,255,255,.06)"}},x:{ticks:{color:"#94a3b8",font:{family:"Plus Jakarta Sans"}},grid:{color:"rgba(255,255,255,.04)"}}}}});
 
   const sA=agg(d,r=>r.sku);
   const sK=Object.keys(sA).filter(k=>sA[k].sales>0).sort((a,b)=>sA[b].sales-sA[a].sales);
@@ -1791,15 +1801,24 @@ function renderBrands(){
     const nChains=skuChains[k]?skuChains[k].size:0;
     const nCust=skuCustomersSet[k]?skuCustomersSet[k].size:0;
     const custPen=totalCustomerBase>0?nCust/totalCustomerBase*100:0;
-    return`<tr><td>${brandBadge(brand,16)} <span style="font-size:12px;color:${bc};font-weight:600">${brand}</span></td><td class="bold">${k}</td><td style="font-size:11.5px;color:#94a3b8">${name}</td><td class="r">${v.orders}</td><td class="r">${v.cases.toLocaleString()}</td><td class="r bold">${$(v.sales)}</td><td class="r"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${Math.min(pct*5,100)}%;background:${bc}"></div></div><span>${P(pct)}</span></div></td><td class="r">${$(v.gp)}</td><td class="r">${mpill(v.margin)}</td><td class="r">${nChains}</td><td class="r">${nCust}</td><td class="r">${P(custPen)}</td></tr>`;
+    return`<tr><td>${brandBadge(brand,20)}</td><td class="bold">${k}</td><td style="font-size:11.5px;color:#94a3b8">${name}</td><td class="r">${v.orders}</td><td class="r">${v.cases.toLocaleString()}</td><td class="r bold">${$(v.sales)}</td><td class="r"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${Math.min(pct*5,100)}%;background:${bc}"></div></div><span>${P(pct)}</span></div></td><td class="r">${$(v.gp)}</td><td class="r">${mpill(v.margin)}</td><td class="r">${nChains}</td><td class="r">${nCust}</td><td class="r">${P(custPen)}</td></tr>`;
   }).join("");
   document.getElementById("tbl-sku").innerHTML=`<thead><tr><th>Marca</th><th>SKU</th><th>Nombre</th><th class="r">Órdenes</th><th class="r">Cajas</th><th class="r">Venta $</th><th class="r">% Mix</th><th class="r">GP $</th><th class="r">Margen${infoIcon("GP ÷ Ventas de este SKU × 100. Verde ≥30% · Amarillo 20-30% · Rojo <20%.")}</th><th class="r"># Cadenas${infoIcon("Cantidad de cadenas distintas que compraron este SKU en el período — mide qué tan distribuido está, no solo cuánto vende. Un SKU concentrado en 1 cadena es más riesgoso que uno repartido en varias.")}</th><th class="r"># Clientes${infoIcon("Cantidad de clientes (localidades) distintos que compraron este SKU en el período.")}</th><th class="r">% Pen. Cartera${infoIcon("# de Clientes que compran este SKU ÷ Total de clientes en la base (261) × 100 — qué porción de toda tu cartera ya compra este producto.")}</th></tr></thead><tbody>${rows}</tbody>`;
+
+  // SKUs de alta rotación: mayor cantidad de órdenes únicas
+  const topSkus=sK.slice().sort((a,b)=>sA[b].orders-sA[a].orders).slice(0,8);
+  let topRows=topSkus.map(k=>{
+    const v=sA[k],sm=SKUS[k]||{},name=sm.item_name||k,brand=sm.brand||'—';
+    return`<tr><td class="bold">${k}</td><td style="font-size:11px;color:#94a3b8">${name}</td><td>${brandBadge(brand,14)}</td><td class="r">${v.orders}</td><td class="r">${v.cases.toLocaleString()}</td><td class="r">${$(v.sales)}</td></tr>`;
+  }).join("");
+  if(!topRows) topRows=`<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:16px">Sin data suficiente</td></tr>`;
+  document.getElementById("tbl-fast-sku").innerHTML=`<thead><tr><th>SKU</th><th>Nombre</th><th>Marca</th><th class="r">Órdenes</th><th class="r">Cajas</th><th class="r">Ventas $</th></tr></thead><tbody>${topRows}</tbody>`;
 
   // SKUs de baja rotación: menor cantidad de órdenes únicas entre los SKUs con al menos 1 venta en el período
   const bottomSkus=sK.slice().sort((a,b)=>sA[a].orders-sA[b].orders).slice(0,8);
   let bottomRows=bottomSkus.map(k=>{
-    const v=sA[k],sm=SKUS[k]||{},name=sm.item_name||k,brand=sm.brand||'—',bc=BRAND_COLORS[brand]||"#64748b";
-    return`<tr><td class="bold">${k}</td><td style="font-size:11px;color:#94a3b8">${name}</td><td>${brandBadge(brand,14)} <span style="font-size:11px;color:${bc};font-weight:600">${brand}</span></td><td class="r">${v.orders}</td><td class="r">${v.cases.toLocaleString()}</td><td class="r">${$(v.sales)}</td></tr>`;
+    const v=sA[k],sm=SKUS[k]||{},name=sm.item_name||k,brand=sm.brand||'—';
+    return`<tr><td class="bold">${k}</td><td style="font-size:11px;color:#94a3b8">${name}</td><td>${brandBadge(brand,14)}</td><td class="r">${v.orders}</td><td class="r">${v.cases.toLocaleString()}</td><td class="r">${$(v.sales)}</td></tr>`;
   }).join("");
   if(!bottomRows) bottomRows=`<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:16px">Sin data suficiente</td></tr>`;
   document.getElementById("tbl-slow-sku").innerHTML=`<thead><tr><th>SKU</th><th>Nombre</th><th>Marca</th><th class="r">Órdenes</th><th class="r">Cajas</th><th class="r">Ventas $</th></tr></thead><tbody>${bottomRows}</tbody>`;
@@ -1815,7 +1834,7 @@ function renderReps(){
     <div class="kpi" style="--kpi-color:#6366f1"><div class="kpi-label">#1 Rep</div><div class="kpi-value" style="font-size:17px">${top}</div><div class="kpi-sub">${$(rA[top]?.sales||0)}</div></div>
     <div class="kpi" style="--kpi-color:#F4C124"><div class="kpi-label">Promedio por Rep${infoIcon("Ventas totales del período ÷ cantidad de reps activos (con al menos 1 venta) — no es una meta, es un promedio real de referencia.")}</div><div class="kpi-value">${$(ts/Math.max(rK.length,1))}</div></div>
     <div class="kpi" style="--kpi-color:#ec4899"><div class="kpi-label">Ventas Totales</div><div class="kpi-value">${$(ts)}</div></div>`;
-  mkChart("ch-rep-bar",{type:"bar",data:{labels:rK,datasets:[{label:"Ventas",data:rK.map(k=>rA[k].sales),backgroundColor:rK.map((_,i)=>REP_COLORS[i%REP_COLORS.length]),borderRadius:6}]},options:{...xDollar(),indexAxis:"y",responsive:true,plugins:{legend:{display:false}}}});
+  mkChart("ch-rep-bar",{type:"bar",data:{labels:rK,datasets:[{label:"Ventas",data:rK.map(k=>rA[k].sales),backgroundColor:rK.map((_,i)=>REP_COLORS[i%REP_COLORS.length]),borderRadius:6}]},options:{...xDollar(),indexAxis:"y",responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`Ventas: ${$(ctx.parsed.x)}`}}}}});
   mkChart("ch-rep-cases",{type:"bar",data:{labels:rK,datasets:[{label:"Cajas",data:rK.map(k=>rA[k].cases),backgroundColor:rK.map((_,i)=>REP_COLORS[i%REP_COLORS.length]+"aa"),borderRadius:6}]},options:{...CD,indexAxis:"y",responsive:true,plugins:{legend:{display:false}}}});
   let rows=rK.map((k,i)=>{
     const v=rA[k],pct=v.sales/ts*100;
@@ -1855,11 +1874,11 @@ function renderClients(){
     <div class="kpi" style="--kpi-color:#ec4899"><div class="kpi-label">Ventas Totales</div><div class="kpi-value">${$(ts)}</div></div>
     <div class="kpi" style="--kpi-color:#10b981"><div class="kpi-label">Margen % Promedio${infoIcon("Ganancia bruta total ÷ ventas totales del canal/cadena/cliente filtrado, ponderado por venta (no es el promedio simple de los % individuales).")}</div><div class="kpi-value">${P(avgMargin)}</div></div>`;
 
-  mkChart("ch-cat-bar",{type:"bar",data:{labels:cK,datasets:[{label:"Ventas $",data:cK.map(k=>cA[k].sales),backgroundColor:cK.map(k=>CHANNEL_COLORS[k]||"#64748b"),borderRadius:5}]},options:{...xDollar(),indexAxis:"y",responsive:true,plugins:{legend:{display:false}}}});
+  mkChart("ch-cat-bar",{type:"bar",data:{labels:cK,datasets:[{label:"Ventas $",data:cK.map(k=>cA[k].sales),backgroundColor:cK.map(k=>CHANNEL_COLORS[k]||"#64748b"),borderRadius:5}]},options:{...xDollar(),indexAxis:"y",responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`Ventas: ${$(ctx.parsed.x)}`}}}}});
 
   const chTop=chK.slice(0,20);
   const chainCat={};Object.values(CUSTOMERS).forEach(c=>{if(!chainCat[c.chain])chainCat[c.chain]=c.channel;});
-  mkChart("ch-chain-bar",{type:"bar",data:{labels:chTop,datasets:[{label:"Ventas $",data:chTop.map(k=>chA[k].sales),backgroundColor:chTop.map(k=>CHANNEL_COLORS[chainCat[k]]||"#64748b"),borderRadius:5}]},options:{...xDollar(),indexAxis:"y",responsive:true,plugins:{legend:{display:false}}}});
+  mkChart("ch-chain-bar",{type:"bar",data:{labels:chTop,datasets:[{label:"Ventas $",data:chTop.map(k=>chA[k].sales),backgroundColor:chTop.map(k=>CHANNEL_COLORS[chainCat[k]]||"#64748b"),borderRadius:5}]},options:{...xDollar(),indexAxis:"y",responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`Ventas: ${$(ctx.parsed.x)}`}}}}});
 
   // Tabla jerárquica: Canal (header) > Cadena (fila expandible) > Cliente (detalle)
   let rows="",chainIdx=0;
