@@ -477,8 +477,8 @@ body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',-app
 .sc-value{font-size:29px;font-weight:700;letter-spacing:-0.03em;line-height:1.02;color:var(--text);margin-top:2px;}
 .sc-title{font-size:14px;font-weight:600;color:var(--text);text-transform:uppercase;letter-spacing:0.02em;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .sc-sub{font-size:10.5px;color:var(--text3);margin-top:5px;font-weight:600;letter-spacing:-0.005em;}
-.sc-segments{display:flex;gap:10px;margin-top:auto;padding-top:9px;border-top:1px solid rgba(255,255,255,0.06);}
-.sc-seg{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0;}
+.sc-segments{display:flex;flex-wrap:wrap;gap:8px 10px;margin-top:auto;padding-top:9px;border-top:1px solid rgba(255,255,255,0.06);}
+.sc-seg{flex:1 1 40%;min-width:60px;display:flex;flex-direction:column;gap:2px;}
 .sc-seg-val{font-size:13px;font-weight:700;color:var(--text);letter-spacing:-0.01em;}
 .sc-seg-val.up{color:var(--green);}
 .sc-seg-val.down{color:var(--red);}
@@ -493,7 +493,9 @@ body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',-app
 .sc-ph::before{opacity:0.25;background:var(--text3);}
 .sc-badge-soon{font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:0.07em;color:var(--text3);background:rgba(255,255,255,0.05);padding:3px 7px;border-radius:6px;white-space:nowrap;}
 .sc-value-na{color:var(--text4);font-size:23px;font-weight:700;}
-.sc-ph-note{font-size:9.5px;color:var(--text4);margin-top:auto;padding-top:8px;line-height:1.35;font-weight:500;}
+.sc-ph-note{font-size:9.5px;color:var(--text4);margin-top:8px;padding-top:8px;line-height:1.35;font-weight:500;}
+.sc-ph .sc-segments{margin-top:auto;}
+.sc-ph .sc-value-na{margin-top:2px;}
 
 /* CHART CARDS */
 .chart-grid{display:grid;gap:16px;margin-bottom:22px;}
@@ -1193,8 +1195,8 @@ function agg(data,keyFn){
 }
 const $=n=>"$"+Number(n).toLocaleString("en-US",{minimumFractionDigits:0,maximumFractionDigits:0});
 const P=n=>Number(n).toFixed(1)+"%";
-const mc=m=>m>=40?"#10b981":m>=30?"#F4C124":"#ef4444";
-const mb=m=>m>=40?"badge-green":m>=30?"badge-yellow":"badge-red";
+const mc=m=>m>=30?"#10b981":m>=20?"#F4C124":"#ef4444";
+const mb=m=>m>=30?"badge-green":m>=20?"badge-yellow":"badge-red";
 const mpill=m=>`<span class="pill" style="background:${mc(m)}22;color:${mc(m)}">${P(m)}</span>`;
 function activeMonths(d){return[...new Set(activeRows(d).map(r=>r.month))].sort((a,b)=>a-b);}
 
@@ -1427,6 +1429,7 @@ function scPlaceholder(o){
       <span class="sc-badge-soon">Próximamente</span>
     </div>
     <div class="sc-value sc-value-na">N/A</div>
+    ${o.segments?`<div class="sc-segments">${o.segments}</div>`:""}
     <div class="sc-ph-note">${o.note}</div>
   </div>`;
 }
@@ -1483,6 +1486,20 @@ function renderOverview(){
     const a=seriesMargin[seriesMargin.length-2], b=seriesMargin[seriesMargin.length-1];
     if(a!=null&&b!=null) marginMom=b-a;
   }
+  // Average Daily Sales del período seleccionado (rango real de fechas dentro de d)
+  let avgDailySales=null;
+  const validDates=d.map(r=>r.invoice_date).filter(x=>x).map(x=>new Date(x));
+  if(validDates.length>0){
+    const minD=new Date(Math.min(...validDates)), maxD=new Date(Math.max(...validDates));
+    const spanDays=Math.max(1,Math.round((maxD-minD)/86400000)+1);
+    avgDailySales=ts/spanDays;
+  }
+  // Margen vs Meta — usa el mismo umbral de 40% que ya se usa en todo el dashboard para "margen saludable" (mc/mb)
+  const MARGIN_TARGET=30;
+  const marginVsTarget = mg - MARGIN_TARGET;
+  // Marca top del período (única métrica real disponible hoy para la futura tarjeta de Velocity)
+  const brandAgg=agg(d,r=>r.brand);
+  const topBrandKey=Object.keys(brandAgg).filter(k=>k&&k!=="Unknown").sort((a,b)=>brandAgg[b].sales-brandAgg[a].sales)[0]||null;
   // Clientes: Coverage, Nuevos (1ra compra histórica dentro del período), Perdidos (umbral de días configurable)
   const totalMaster = Object.keys(CUSTOMERS).length;
   const coveragePct = totalMaster>0 ? uc/totalMaster*100 : null;
@@ -1504,15 +1521,17 @@ function renderOverview(){
 
   document.getElementById("kpi-overview").innerHTML=[
     // 1. Revenue
-    scCard({icon:SC_ICONS.revenue,color:"#34A852",tab:"monthly",title:"Revenue",titleAttr:"Net Sales: "+$(ts),
-      value:kFmt(ts), sub:`${goalPct.toFixed(1)}% de meta anual`,
+    scCard({icon:SC_ICONS.revenue,color:"#34A852",title:"Revenue",titleAttr:"Net Sales: "+$(ts),
+      value:kFmt(ts), sub:`${goalPct.toFixed(1)}% de meta anual (Budget Attainment)`,
       mom:scDelta(momPct,"MoM"), yoy:scDelta(null,"YoY"),
-      spark:sparkline(seriesSales,"#34A852")}),
+      segments: scSegment("YoY", "—") + scSegment("MoM", momPct==null?"—":(momPct>=0?"+":"")+momPct.toFixed(1)+"%", {tone:momPct==null?"neutral":momPct>=0?"up":"down"}) + scSegment("Venta Diaria Prom.", avgDailySales==null?"—":kFmt(avgDailySales))
+    }),
     // 2. Gross Margin
-    scCard({icon:SC_ICONS.margin,color:"#6366f1",tab:"brands",title:"Gross Margin",
+    scCard({icon:SC_ICONS.margin,color:"#6366f1",title:"Gross Margin",
       value:P(mg), sub:`GP ${kFmt(tg)}`,
       mom:scDelta(marginMom,"MoM",{pp:true}), yoy:scDelta(null,"YoY"),
-      spark:sparkline(seriesMargin,"#6366f1")}),
+      segments: scSegment("vs. Período Ant.", marginMom==null?"—":(marginMom>=0?"+":"")+marginMom.toFixed(1)+"pp", {tone:marginMom==null?"neutral":marginMom>=0?"up":"down"}) + scSegment(`vs. Meta (${MARGIN_TARGET}%)`, (marginVsTarget>=0?"+":"")+marginVsTarget.toFixed(1)+"pp", {tone:marginVsTarget>=0?"up":"down"})
+    }),
     // 3. Active Customers
     scCard({icon:SC_ICONS.customers,color:"#10b981",title:"Active Customers",
       value:String(uc),
@@ -1520,21 +1539,31 @@ function renderOverview(){
       mom:scDelta(custMom,"MoM"), yoy:scDelta(null,"YoY"),
       segments: scSegment("Nuevos", newC==null?"—":"+"+newC, {tone:"up"}) + scSegment(`Perdidos (${LOST_THRESHOLD_DAYS}d)`, lostC==null?"—":String(lostC), {tone:lostC?"down":"neutral"})
     }),
-    // 4. Active Doors
+    // 4. Active Doors — requiere mapeo tienda/factura que no existe todavía; estructura lista, sin inventar números
     scPlaceholder({icon:SC_ICONS.doors,color:"#0ea5e9",title:"Active Doors",
-      note:"Requiere App de Ventas (tiendas) + mapeo factura\u2192tienda"}),
-    // 5. Weekly Velocity
+      note:"Requiere App de Ventas (tiendas) + mapeo factura→tienda",
+      segments: scSegment("Coverage", "—") + scSegment("Nuevas", "—") + scSegment("Perdidas", "—")
+    }),
+    // 5. Weekly Velocity — "Marca Top" sí es calculable hoy con la data que existe; el resto requiere doors+metas
     scPlaceholder({icon:SC_ICONS.velocity,color:"#F4C124",title:"Weekly Velocity",
-      note:"UPSPW \u2014 requiere doors + metas por SKU"}),
-    // 6. Inventory Health
+      note:"UPSPW — requiere conteo de doors + metas por SKU",
+      segments: scSegment("Meta", "—") + scSegment("vs. Ant.", "—") + scSegment("Marca Top", topBrandKey||"—")
+    }),
+    // 6. Inventory Health — requiere feed de inventario, no existe fuente hoy
     scPlaceholder({icon:SC_ICONS.inventory,color:"#f97316",title:"Inventory Health",
-      note:"Requiere feed de inventario (on-hand, valor, turnover)"}),
-    // 7. Fill Rate
+      note:"Requiere feed de inventario (on-hand, valor, turnover)",
+      segments: scSegment("Valor Inv.", "—") + scSegment("Rotación", "—") + scSegment("Estado", "—")
+    }),
+    // 7. Fill Rate — requiere data de órdenes vs. surtido, no existe fuente hoy
     scPlaceholder({icon:SC_ICONS.fillrate,color:"#ec4899",title:"Fill Rate",
-      note:"Requiere \u00f3rdenes vs surtido / backorders"}),
-    // 8. Forecast Accuracy
+      note:"Requiere órdenes vs surtido / backorders",
+      segments: scSegment("Ordenado", "—") + scSegment("Enviado", "—") + scSegment("Backorder", "—")
+    }),
+    // 8. Forecast Accuracy — requiere tabla de forecast (plan vs actual), no existe fuente hoy
     scPlaceholder({icon:SC_ICONS.forecast,color:"#a855f7",title:"Forecast Accuracy",
-      note:"Requiere tabla de forecast (plan vs actual)"})
+      note:"Requiere tabla de forecast (plan vs actual)",
+      segments: scSegment("Error", "—") + scSegment("Bias", "—") + scSegment("Fcst vs Actual", "—")
+    })
   ].join("");
 
   const mS=months.map(m=>d.filter(r=>r.month===m).reduce((s,r)=>s+r.amount,0));
