@@ -477,6 +477,16 @@ body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',-app
 .sc-value{font-size:29px;font-weight:700;letter-spacing:-0.03em;line-height:1.02;color:var(--text);margin-top:2px;}
 .sc-title{font-size:14px;font-weight:600;color:var(--text);text-transform:uppercase;letter-spacing:0.02em;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .sc-sub{font-size:10.5px;color:var(--text3);margin-top:5px;font-weight:600;letter-spacing:-0.005em;}
+.sc-segments{display:flex;gap:10px;margin-top:auto;padding-top:9px;border-top:1px solid rgba(255,255,255,0.06);}
+.sc-seg{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0;}
+.sc-seg-val{font-size:13px;font-weight:700;color:var(--text);letter-spacing:-0.01em;}
+.sc-seg-val.up{color:var(--green);}
+.sc-seg-val.down{color:var(--red);}
+.sc-seg-lbl{font-size:8.5px;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;font-weight:700;}
+.sc-thresh-toggle{display:flex;gap:3px;margin-top:3px;}
+.sc-thresh-btn{font-size:7.5px;font-weight:700;padding:1px 5px;border-radius:4px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:var(--text3);cursor:pointer;line-height:1.4;}
+.sc-thresh-btn:hover{border-color:var(--border-strong);color:var(--text2);}
+.sc-thresh-btn.active{background:var(--sc-color,var(--accent));color:#0a0f1a;border-color:transparent;}
 .sc-spark{margin-top:auto;padding-top:8px;height:38px;}
 .sc-spark-svg{width:100%;height:36px;display:block;}
 .sc-ph{opacity:0.52;}
@@ -643,15 +653,21 @@ body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',-app
         <option value="Active">Active</option>
         <option value="Dormant">Dormant</option>
       </select>
+      <select id="cf-activity" class="filter-select" onchange="onActivityFilterChange()">
+        <option value="all">Actividad: Todos</option>
+        <option value="30">Perdidos 30+ días</option>
+        <option value="60">Perdidos 60+ días</option>
+        <option value="90">Perdidos 90+ días</option>
+      </select>
     </div>
   </div>
   <div class="kpi-grid" id="kpi-customers"></div>
   <div class="chart-grid chart-grid-2">
-    <div class="chart-card"><div class="chart-title"><span class="accent-dot"></span>Ventas por Canal ($)</div><canvas id="ch-cat-bar" height="280"></canvas></div>
-    <div class="chart-card"><div class="chart-title"><span class="accent-dot"></span>Top Cadenas por Ventas ($)</div><canvas id="ch-chain-bar" height="280"></canvas></div>
+    <div class="chart-card"><div class="chart-title"><span class="accent-dot"></span><span id="cht-cat-title">Ventas por Canal ($)</span></div><canvas id="ch-cat-bar" height="280"></canvas></div>
+    <div class="chart-card"><div class="chart-title"><span class="accent-dot"></span><span id="cht-chain-title">Top Cadenas por Ventas ($)</span></div><canvas id="ch-chain-bar" height="280"></canvas></div>
   </div>
   <div class="section">
-    <div class="section-header"><div class="section-title">Canal → Cadena → Cliente</div><div class="section-sub">Click en una cadena para ver sus clientes individuales</div></div>
+    <div class="section-header"><div class="section-title" id="tbl-customer-title">Canal → Cadena → Cliente</div><div class="section-sub" id="tbl-customer-sub">Click en una cadena para ver sus clientes individuales</div></div>
     <div class="table-card"><table class="data-table" id="tbl-customer"></table></div>
   </div>
 </div>
@@ -712,6 +728,7 @@ const REP_COLORS=['#34A852','#6366f1','#F4C124','#ec4899','#10b981','#f97316','#
 const CHANNEL_ORDER=['Club','Mass Market','Supermercados','Specialty Store','Restaurantes','Reposteria','Panadería/Cafetería','Coffee Shop','Health Foods','Farmacias','Gasolineras','Colmado','Meal Prep','Otros'];
 const COMPANY_COLORS={'Vitaplena':'#34A852','Egg Market':'#F4C124','Hua Xing':'#ec4899'};
 const ANNUAL_GOAL_2026 = 1500000; // Meta anual $1.5M consolidada
+let LOST_THRESHOLD_DAYS = 60; // Umbral de inactividad para Lost Customers: 30 / 60 / 90
 
 // ============================================================
 // STATE
@@ -1108,7 +1125,7 @@ function cascadeFilterOptions(){
 }
 
 function resetFilters(){
-  ["f-company","f-rep","f-chain","cf-department","cf-channel","cf-brand","cf-sku","cf-status"].forEach(id=>{const el=document.getElementById(id);if(el)el.value="all";});
+  ["f-company","f-rep","f-chain","cf-department","cf-channel","cf-brand","cf-sku","cf-status","cf-activity"].forEach(id=>{const el=document.getElementById(id);if(el)el.value="all";});
   selectedMonths = "all";
   pendingSelectedMonths = "all";
   updatePeriodLabel();
@@ -1180,6 +1197,78 @@ const mc=m=>m>=40?"#10b981":m>=30?"#F4C124":"#ef4444";
 const mb=m=>m>=40?"badge-green":m>=30?"badge-yellow":"badge-red";
 const mpill=m=>`<span class="pill" style="background:${mc(m)}22;color:${mc(m)}">${P(m)}</span>`;
 function activeMonths(d){return[...new Set(activeRows(d).map(r=>r.month))].sort((a,b)=>a-b);}
+
+// ---- Helpers para Active Customers: coverage / nuevos (1ra compra histórica) / perdidos (período comparable anterior) ----
+function otherFilterValues(){
+  return {
+    co: document.getElementById("f-company")?.value||"all",
+    r: document.getElementById("f-rep")?.value||"all",
+    ch: document.getElementById("f-chain")?.value||"all",
+    cfChan: document.getElementById("cf-department")?.value||"all",
+    cfCat: document.getElementById("cf-channel")?.value||"all",
+    cfBrand: document.getElementById("cf-brand")?.value||"all",
+    cfSku: document.getElementById("cf-sku")?.value||"all",
+    cfStatus: document.getElementById("cf-status")?.value||"all"
+  };
+}
+function rowsForMonths(monthsArr){
+  const f=otherFilterValues();
+  return activeRows(ENRICHED.filter(x=>
+    (f.co==="all"||x.company===f.co)&&
+    monthsArr.includes(x.month)&&
+    (f.r==="all"||x.sales_rep===f.r)&&
+    (f.ch==="all"||x.chain===f.ch)&&
+    (f.cfChan==="all"||x.department===f.cfChan)&&
+    (f.cfCat==="all"||x.channel===f.cfCat)&&
+    (f.cfBrand==="all"||x.brand===f.cfBrand)&&
+    (f.cfSku==="all"||x.sku===f.cfSku)&&
+    (f.cfStatus==="all"||x.status===f.cfStatus)
+  ));
+}
+function customersActiveInMonths(monthsArr){ return new Set(rowsForMonths(monthsArr).map(r=>r.customer_name)); }
+// Mapa customer_name -> primer mes en que compró jamás (respetando los demás filtros activos, ignorando el de período)
+function customerFirstMonthMap(){
+  const allMonths=[...new Set(ENRICHED.map(r=>r.month))];
+  const map={};
+  rowsForMonths(allMonths).forEach(r=>{
+    if(map[r.customer_name]===undefined || r.month<map[r.customer_name]) map[r.customer_name]=r.month;
+  });
+  return map;
+}
+// Mapa customer_name -> primer mes en que compró jamás (respetando los demás filtros activos, ignorando el de período)
+// Última fecha de compra por cliente (respeta filtros activos, ignora el de período) + fecha más reciente del set
+function customerLastPurchaseMap(){
+  const allMonths=[...new Set(ENRICHED.map(r=>r.month))];
+  const rows=rowsForMonths(allMonths);
+  const map={};let maxDate=null;
+  rows.forEach(r=>{
+    if(!r.invoice_date)return;
+    const dt=new Date(r.invoice_date);
+    if(!map[r.customer_name]||dt>map[r.customer_name])map[r.customer_name]=dt;
+    if(!maxDate||dt>maxDate)maxDate=dt;
+  });
+  return {map,maxDate};
+}
+// Lost Customers: clientes cuya última compra fue hace más de N días (vs. la fecha más reciente de la data)
+function computeLostCustomers(thresholdDays){
+  const {map,maxDate}=customerLastPurchaseMap();
+  if(!maxDate)return null;
+  let count=0;
+  Object.values(map).forEach(lastDt=>{
+    const days=Math.round((maxDate-lastDt)/86400000);
+    if(days>thresholdDays)count++;
+  });
+  return count;
+}
+function setLostThreshold(days){
+  LOST_THRESHOLD_DAYS=days;
+  renderOverview();
+}
+function onActivityFilterChange(){
+  const v=document.getElementById("cf-activity")?.value;
+  if(v && v!=="all") LOST_THRESHOLD_DAYS=Number(v);
+  renderClients();
+}
 
 // Penetración por cadena: localidades únicas (Active) donde vendemos vs. universo total de mercado
 // Normaliza por número de tienda (#NNN al final del nombre) para no duplicar Grocery/Deli de la misma localidad
@@ -1284,6 +1373,11 @@ function scDelta(val,label,{pp=false}={}){
   const num=sign+val.toFixed(1)+(pp?"pp":"%");
   return `<span class="sc-delta ${cls}">${arr}${num}<span class="sc-delta-lbl">${label}</span></span>`;
 }
+// Mini-métrica de soporte (para el bloque .sc-segments — ej. Nuevos / Perdidos)
+function scSegment(label,val,{tone="neutral",extra=""}={}){
+  const cls=tone==="up"?"up":tone==="down"?"down":"";
+  return `<div class="sc-seg"><div class="sc-seg-val ${cls}">${val}</div><div class="sc-seg-lbl">${label}</div>${extra}</div>`;
+}
 // Sparkline SVG (área + línea) normalizado; ignora nulls
 function sparkline(vals,color){
   const W=160,H=36,pad=4;
@@ -1322,7 +1416,7 @@ function scCard(o){
     </div>
     <div class="sc-value">${o.value}</div>
     ${o.sub?`<div class="sc-sub">${o.sub}</div>`:""}
-    <div class="sc-spark">${o.spark}</div>
+    ${o.segments?`<div class="sc-segments">${o.segments}</div>`:`<div class="sc-spark">${o.spark||""}</div>`}
   </div>`;
 }
 // Constructor de tarjeta placeholder (dato aún no disponible en Supabase)
@@ -1389,14 +1483,22 @@ function renderOverview(){
     const a=seriesMargin[seriesMargin.length-2], b=seriesMargin[seriesMargin.length-1];
     if(a!=null&&b!=null) marginMom=b-a;
   }
-  // Clientes: MoM %, nuevos y perdidos (\u00faltimo mes vs mes anterior)
-  let custMom=null,newC=null,lostC=null;
+  // Clientes: Coverage, Nuevos (1ra compra histórica dentro del período), Perdidos (umbral de días configurable)
+  const totalMaster = Object.keys(CUSTOMERS).length;
+  const coveragePct = totalMaster>0 ? uc/totalMaster*100 : null;
+  const currentCustSet = new Set(d.map(r=>r.customer_name));
+  let newC=null;
+  if (selectedMonths!=="all" && months.length>0){
+    const firstMonthMap=customerFirstMonthMap();
+    newC=[...currentCustSet].filter(c=>months.includes(firstMonthMap[c])).length;
+  }
+  const lostC = computeLostCustomers(LOST_THRESHOLD_DAYS);
+  // Growth Rate MoM (mismo custMom de antes, para el delta MoM de la tarjeta)
+  let custMom=null;
   if(months.length>=2){
     const lm=months[months.length-1], pm=months[months.length-2];
     const lastSet=new Set(d.filter(r=>r.month===lm).map(r=>r.customer_name));
     const prevSet=new Set(d.filter(r=>r.month===pm).map(r=>r.customer_name));
-    newC=[...lastSet].filter(x=>!prevSet.has(x)).length;
-    lostC=[...prevSet].filter(x=>!lastSet.has(x)).length;
     if(prevSet.size>0) custMom=((lastSet.size-prevSet.size)/prevSet.size)*100;
   }
 
@@ -1412,10 +1514,12 @@ function renderOverview(){
       mom:scDelta(marginMom,"MoM",{pp:true}), yoy:scDelta(null,"YoY"),
       spark:sparkline(seriesMargin,"#6366f1")}),
     // 3. Active Customers
-    scCard({icon:SC_ICONS.customers,color:"#10b981",tab:"customers",title:"Active Customers",
-      value:String(uc), sub:`${newC==null?"\u2014":"+"+newC} nuevos \u00b7 ${lostC==null?"\u2014":lostC} perdidos`,
+    scCard({icon:SC_ICONS.customers,color:"#10b981",title:"Active Customers",
+      value:String(uc),
+      sub: coveragePct==null?"—":`${coveragePct.toFixed(1)}% of Customer Base`,
       mom:scDelta(custMom,"MoM"), yoy:scDelta(null,"YoY"),
-      spark:sparkline(seriesCust,"#10b981")}),
+      segments: scSegment("Nuevos", newC==null?"—":"+"+newC, {tone:"up"}) + scSegment(`Perdidos (${LOST_THRESHOLD_DAYS}d)`, lostC==null?"—":String(lostC), {tone:lostC?"down":"neutral"})
+    }),
     // 4. Active Doors
     scPlaceholder({icon:SC_ICONS.doors,color:"#0ea5e9",title:"Active Doors",
       note:"Requiere App de Ventas (tiendas) + mapeo factura\u2192tienda"}),
@@ -1577,6 +1681,17 @@ function renderReps(){
 }
 
 function renderClients(){
+  const activityFilter = document.getElementById("cf-activity")?.value || "all";
+  document.getElementById("cht-cat-title").textContent = activityFilter==="all" ? "Ventas por Canal ($)" : "Perdidos por Canal";
+  document.getElementById("cht-chain-title").textContent = activityFilter==="all" ? "Top Cadenas por Ventas ($)" : "Perdidos por Cadena";
+  document.getElementById("tbl-customer-title").textContent = activityFilter==="all" ? "Canal → Cadena → Cliente" : `Clientes Perdidos (${activityFilter}+ días sin comprar)`;
+  document.getElementById("tbl-customer-sub").textContent = activityFilter==="all" ? "Click en una cadena para ver sus clientes individuales" : "Ordenados por más tiempo inactivo primero";
+
+  if (activityFilter !== "all"){
+    renderLostCustomersView(Number(activityFilter));
+    return;
+  }
+
   const d=FILTERED;
   const cA=agg(d,r=>r.channel);           // nivel Canal
   const chA=agg(d,r=>r.chain);            // nivel Cadena
@@ -1639,6 +1754,70 @@ function renderClients(){
     });
   });
   document.getElementById("tbl-customer").innerHTML=`<thead><tr><th>Canal / Cadena / Cliente</th><th class="r">Ventas $</th><th class="r">% Mix</th><th class="r">Cajas</th><th class="r">GP $</th><th class="r">Margen</th><th class="r">Penetración</th><th class="r">Detalle</th></tr></thead><tbody>${rows}</tbody>`;
+}
+
+// Vista de Clientes Perdidos: filtro real de Actividad (30/60/90 días sin comprar) sobre el master de customers
+function renderLostCustomersView(thresholdDays){
+  const {map:lastPurchase, maxDate} = customerLastPurchaseMap();
+  const f = otherFilterValues();
+  const chainFilter = document.getElementById("f-chain")?.value || "all";
+
+  if(!maxDate){
+    document.getElementById("kpi-customers").innerHTML = `<div class="kpi"><div class="kpi-label">Clientes Perdidos</div><div class="kpi-value">—</div><div class="kpi-sub">Sin data de ventas disponible</div></div>`;
+    document.getElementById("tbl-customer").innerHTML = `<tbody><tr><td style="text-align:center;color:var(--text3);padding:24px">Sin data suficiente</td></tr></tbody>`;
+    return;
+  }
+
+  const lostList = Object.entries(CUSTOMERS).filter(([name,c])=>{
+    const lastDt = lastPurchase[name];
+    if(!lastDt) return false; // nunca ha comprado - no aplica como "perdido", es simplemente inactivo desde siempre
+    const days = Math.round((maxDate - lastDt)/86400000);
+    if(days <= thresholdDays) return false;
+    if(chainFilter!=="all" && c.chain!==chainFilter) return false;
+    if(f.cfCat!=="all" && c.channel!==f.cfCat) return false;
+    if(f.cfChan!=="all" && c.department!==f.cfChan) return false;
+    if(f.cfStatus!=="all" && c.status!==f.cfStatus) return false;
+    if(f.r!=="all" && c.primary_rep!==f.r) return false;
+    return true;
+  }).map(([name,c])=>{
+    const lastDt=lastPurchase[name];
+    return {name,c,lastDt,days:Math.round((maxDate-lastDt)/86400000)};
+  }).sort((a,b)=>b.days-a.days);
+
+  const totalMaster=Object.keys(CUSTOMERS).length;
+  const avgDays = lostList.length? Math.round(lostList.reduce((s,x)=>s+x.days,0)/lostList.length):0;
+  const byChain={};lostList.forEach(x=>{const k=x.c.chain||'—';byChain[k]=(byChain[k]||0)+1;});
+  const topChain=Object.keys(byChain).sort((a,b)=>byChain[b]-byChain[a])[0]||"—";
+
+  document.getElementById("kpi-customers").innerHTML=`
+    <div class="kpi" style="--kpi-color:#ef4444"><div class="kpi-label">Clientes Perdidos (${thresholdDays}d+)</div><div class="kpi-value">${lostList.length}</div></div>
+    <div class="kpi" style="--kpi-color:#F4C124"><div class="kpi-label">Promedio Días Inactivo</div><div class="kpi-value">${avgDays}</div></div>
+    <div class="kpi" style="--kpi-color:#6366f1"><div class="kpi-label">Cadena con Más Perdidos</div><div class="kpi-value" style="font-size:17px">${topChain}</div><div class="kpi-sub">${byChain[topChain]||0} clientes</div></div>
+    <div class="kpi" style="--kpi-color:#94a3b8"><div class="kpi-label">Total Cartera</div><div class="kpi-value">${totalMaster}</div></div>
+    <div class="kpi" style="--kpi-color:#10b981"><div class="kpi-label">% de Cartera Perdida</div><div class="kpi-value">${totalMaster>0?P(lostList.length/totalMaster*100):"—"}</div></div>`;
+
+  const chanCounts={};lostList.forEach(x=>{const k=x.c.channel||'—';chanCounts[k]=(chanCounts[k]||0)+1;});
+  const chanKeys=Object.keys(chanCounts).sort((a,b)=>chanCounts[b]-chanCounts[a]);
+  mkChart("ch-cat-bar",{type:"bar",data:{labels:chanKeys,datasets:[{label:"Perdidos",data:chanKeys.map(k=>chanCounts[k]),backgroundColor:chanKeys.map(k=>CHANNEL_COLORS[k]||"#ef4444"),borderRadius:5}]},options:{...CD,indexAxis:"y",responsive:true,plugins:{legend:{display:false}}}});
+
+  const chainKeysTop=Object.keys(byChain).sort((a,b)=>byChain[b]-byChain[a]).slice(0,15);
+  mkChart("ch-chain-bar",{type:"bar",data:{labels:chainKeysTop,datasets:[{label:"Perdidos",data:chainKeysTop.map(k=>byChain[k]),backgroundColor:"#ef4444",borderRadius:5}]},options:{...CD,indexAxis:"y",responsive:true,plugins:{legend:{display:false}}}});
+
+  let rows = lostList.map(x=>{
+    const st=x.c.status||'Active';
+    return `<tr>
+      <td class="bold">${x.name}</td>
+      <td>${x.c.chain||'—'}</td>
+      <td>${x.c.channel||'—'}</td>
+      <td>${x.c.department||'—'}</td>
+      <td class="r">${x.lastDt.toISOString().slice(0,10)}</td>
+      <td class="r bold" style="color:#ef4444">${x.days} días</td>
+      <td>${x.c.primary_rep||'—'}</td>
+      <td><span class="status-pill ${st==='Active'?'status-active':'status-dormant'}">${st}</span></td>
+    </tr>`;
+  }).join("");
+  if(!rows) rows = `<tr><td colspan="8" style="text-align:center;color:var(--text3);padding:24px">No hay clientes perdidos con este filtro 🎉</td></tr>`;
+  document.getElementById("tbl-customer").innerHTML=`<thead><tr><th>Cliente</th><th>Cadena</th><th>Canal</th><th>Departamento</th><th class="r">Última Compra</th><th class="r">Días Inactivo</th><th>Rep</th><th>Status</th></tr></thead><tbody>${rows}</tbody>`;
 }
 
 function renderMonthly(){
