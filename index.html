@@ -457,9 +457,7 @@ body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',-app
   overflow:hidden;
 }
 .sc-card::before{content:"";position:absolute;top:0;left:0;width:100%;height:2px;background:var(--sc-color,var(--accent));opacity:0.55;}
-.sc-click{cursor:pointer;}
-.sc-click:hover{border-color:var(--border-strong);transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,0.4);}
-.sc-click:active{transform:translateY(-1px);}
+.sc-card:hover{border-color:var(--border-strong);transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,0.32);}
 .sc-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:9px;}
 .sc-icon{
   width:32px;height:32px;border-radius:9px;
@@ -1315,9 +1313,7 @@ function sparkline(vals,color){
 // Constructor de tarjeta viva
 function scCard(o){
   const tint=o.color+"1f";
-  const click=o.tab?`onclick="showTab('${o.tab}')"`:"";
-  const cls="sc-card"+(o.tab?" sc-click":"");
-  return `<div class="${cls}" style="--sc-color:${o.color};--sc-tint:${tint}" ${click} ${o.titleAttr?`title="${o.titleAttr}"`:""}>
+  return `<div class="sc-card" style="--sc-color:${o.color};--sc-tint:${tint};cursor:default" ${o.titleAttr?`title="${o.titleAttr}"`:""}>
     <div class="sc-top">
       <span class="sc-icon">${o.icon}</span>
       <div class="sc-deltas">${o.mom}${o.yoy}</div>
@@ -1330,7 +1326,7 @@ function scCard(o){
 }
 // Constructor de tarjeta placeholder (dato aún no disponible en Supabase)
 function scPlaceholder(o){
-  return `<div class="sc-card sc-ph" style="--sc-color:${o.color}" title="${o.note}">
+  return `<div class="sc-card sc-ph" style="--sc-color:${o.color};cursor:default" title="${o.note}">
     <div class="sc-top">
       <span class="sc-icon">${o.icon}</span>
       <span class="sc-badge-soon">Próximamente</span>
