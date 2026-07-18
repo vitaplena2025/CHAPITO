@@ -652,7 +652,7 @@ th .info-tip::after{top:auto;bottom:100%;border-top-color:transparent;border-bot
   <div class="kpi-grid" id="kpi-brands"></div>
   <div class="chart-grid chart-grid-6040">
     <div class="chart-card"><div class="chart-title"><span class="accent-dot"></span>Ventas &amp; GP por Marca ($)</div><canvas id="ch-brand-bar" height="210"></canvas></div>
-    <div class="chart-card"><div class="chart-title"><span class="accent-dot"></span>Mix de Marcas</div><canvas id="ch-brand-pie" height="210"></canvas></div>
+    <div class="chart-card"><div class="chart-title"><span class="accent-dot"></span>Mix de Marcas</div><div style="display:flex;align-items:center;gap:16px"><div style="flex:1;min-width:0"><canvas id="ch-brand-pie" height="210"></canvas></div><div id="brand-pie-legend" style="display:flex;flex-direction:column;gap:10px;flex-shrink:0"></div></div></div>
   </div>
   <div class="chart-grid chart-grid-6040">
     <div class="chart-card"><div class="chart-title"><span class="accent-dot"></span>Margen % por Marca</div><canvas id="ch-brand-margin" height="190"></canvas></div>
@@ -775,6 +775,21 @@ const MN={1:"Enero",2:"Febrero",3:"Marzo",4:"Abril",5:"Mayo",6:"Junio",7:"Julio"
 const CHANNEL_COLORS={'Club':'#0071ce','Mass Market':'#ffc220','Supermercados':'#34A852','Specialty Store':'#a855f7','Reposteria':'#ec4899','Restaurantes':'#ef4444','Health Foods':'#10b981','Panadería/Cafetería':'#fb923c','Coffee Shop':'#c084fc','Farmacias':'#3b82f6','Gasolineras':'#06b6d4','Otros':'#64748b','Colmado':'#8b5cf6','Meal Prep':'#f97316'};
 const DEPARTMENT_COLORS={'Grocery':'#34A852','Deli':'#F4C124','Food Service':'#ec4899','Retail':'#0ea5e9'};
 const BRAND_COLORS={'Lakanto':'#34A852','Impact':'#6366f1','Palmini':'#f59e0b','Nekstella':'#ec4899','Töst':'#f97316','Green Cola':'#10b981','Unknown':'#475569'};
+const BRAND_LOGOS={
+  'Töst': 'https://ejkvymlezbqvzsmwejca.supabase.co/storage/v1/object/public/brand-logos/Tost.png',
+  'Lakanto': 'https://ejkvymlezbqvzsmwejca.supabase.co/storage/v1/object/public/brand-logos/Lakanto.png',
+  'Green Cola': 'https://ejkvymlezbqvzsmwejca.supabase.co/storage/v1/object/public/brand-logos/Green_Cola.png',
+  'Palmini': 'https://ejkvymlezbqvzsmwejca.supabase.co/storage/v1/object/public/brand-logos/Palmini.png',
+  'Nekstella': 'https://ejkvymlezbqvzsmwejca.supabase.co/storage/v1/object/public/brand-logos/Nekstella.png',
+  'Impact': 'https://ejkvymlezbqvzsmwejca.supabase.co/storage/v1/object/public/brand-logos/Impact.png'
+};
+// Devuelve <img> del logo si existe, o un dot de color como fallback
+function brandBadge(brand,size){
+  size=size||18;
+  if(BRAND_LOGOS[brand]) return `<img src="${BRAND_LOGOS[brand]}" alt="${brand}" style="height:${size}px;width:auto;vertical-align:middle;display:inline-block">`;
+  const bc=BRAND_COLORS[brand]||"#64748b";
+  return `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${bc};vertical-align:middle"></span>`;
+}
 const REP_COLORS=['#34A852','#6366f1','#F4C124','#ec4899','#10b981','#f97316','#a855f7','#06b6d4','#84cc16'];
 const CHANNEL_ORDER=['Club','Mass Market','Supermercados','Specialty Store','Restaurantes','Reposteria','Panadería/Cafetería','Coffee Shop','Health Foods','Farmacias','Gasolineras','Colmado','Meal Prep','Otros'];
 const COMPANY_COLORS={'Vitaplena':'#34A852','Egg Market':'#F4C124','Hua Xing':'#ec4899'};
@@ -1744,11 +1759,15 @@ function renderBrands(){
   const top=bK[0]||"";
   document.getElementById("kpi-brands").innerHTML=`
     <div class="kpi" style="--kpi-color:#34A852"><div class="kpi-label">Marcas Activas</div><div class="kpi-value">${bK.length}</div></div>
-    <div class="kpi" style="--kpi-color:#6366f1"><div class="kpi-label">#1 Marca</div><div class="kpi-value" style="font-size:18px">${top}</div><div class="kpi-sub">${$(bA[top]?.sales||0)}</div></div>
+    <div class="kpi" style="--kpi-color:#6366f1"><div class="kpi-label">#1 Marca</div><div class="kpi-value" style="font-size:18px;display:flex;align-items:center;gap:8px">${top?brandBadge(top,22):""}${top}</div><div class="kpi-sub">${$(bA[top]?.sales||0)}</div></div>
     <div class="kpi" style="--kpi-color:#F4C124"><div class="kpi-label">Margen Promedio${infoIcon("GP total ÷ Ventas totales del portafolio filtrado (por Marca/SKU/Canal). Ponderado por venta, no promedio simple entre marcas.")}</div><div class="kpi-value">${P(avgMargin)}</div></div>
     <div class="kpi" style="--kpi-color:#ec4899"><div class="kpi-label">Ventas Totales</div><div class="kpi-value">${$(ts)}</div></div>`;
   mkChart("ch-brand-bar",{type:"bar",data:{labels:bK,datasets:[{label:"Ventas",data:bK.map(k=>bA[k].sales),backgroundColor:bK.map(k=>BRAND_COLORS[k]||"#64748b"),borderRadius:6},{label:"GP",data:bK.map(k=>bA[k].gp),backgroundColor:bK.map(k=>(BRAND_COLORS[k]||"#64748b")+"88"),borderRadius:6}]},options:{...yDollar(),responsive:true}});
-  mkChart("ch-brand-pie",{type:"doughnut",data:{labels:bK,datasets:[{data:bK.map(k=>bA[k].sales),backgroundColor:bK.map(k=>BRAND_COLORS[k]||"#64748b"),borderWidth:2,borderColor:"#111827"}]},options:{responsive:true,cutout:"62%",plugins:{legend:{position:"right",labels:{color:"#94a3b8",font:{family:"Plus Jakarta Sans",size:12},boxWidth:10}}}}});
+  mkChart("ch-brand-pie",{type:"doughnut",data:{labels:bK,datasets:[{data:bK.map(k=>bA[k].sales),backgroundColor:bK.map(k=>BRAND_COLORS[k]||"#64748b"),borderWidth:2,borderColor:"#111827"}]},options:{responsive:true,cutout:"62%",plugins:{legend:{display:false}}}});
+  document.getElementById("brand-pie-legend").innerHTML = bK.map(k=>{
+    const pct=ts>0?bA[k].sales/ts*100:0;
+    return `<div style="display:flex;align-items:center;gap:8px">${brandBadge(k,16)}<span style="font-size:11.5px;color:var(--text2);font-weight:600">${P(pct)}</span></div>`;
+  }).join("");
 
   // Margen % por Marca (nuevo) — mismos umbrales de color que el resto del dashboard (mc)
   mkChart("ch-brand-margin",{type:"bar",data:{labels:bK,datasets:[{label:"Margen %",data:bK.map(k=>bA[k].margin),backgroundColor:bK.map(k=>mc(bA[k].margin)),borderRadius:6}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{max:65,ticks:{color:"#94a3b8",font:{family:"Plus Jakarta Sans"},callback:v=>v+"%"},grid:{color:"rgba(255,255,255,.06)"}},x:{ticks:{color:"#94a3b8",font:{family:"Plus Jakarta Sans"}},grid:{color:"rgba(255,255,255,.04)"}}}}});
@@ -1772,7 +1791,7 @@ function renderBrands(){
     const nChains=skuChains[k]?skuChains[k].size:0;
     const nCust=skuCustomersSet[k]?skuCustomersSet[k].size:0;
     const custPen=totalCustomerBase>0?nCust/totalCustomerBase*100:0;
-    return`<tr><td><span class="pill" style="background:${bc}22;color:${bc}">${brand}</span></td><td class="bold">${k}</td><td style="font-size:11.5px;color:#94a3b8">${name}</td><td class="r">${v.orders}</td><td class="r">${v.cases.toLocaleString()}</td><td class="r bold">${$(v.sales)}</td><td class="r"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${Math.min(pct*5,100)}%;background:${bc}"></div></div><span>${P(pct)}</span></div></td><td class="r">${$(v.gp)}</td><td class="r">${mpill(v.margin)}</td><td class="r">${nChains}</td><td class="r">${nCust}</td><td class="r">${P(custPen)}</td></tr>`;
+    return`<tr><td>${brandBadge(brand,16)} <span style="font-size:12px;color:${bc};font-weight:600">${brand}</span></td><td class="bold">${k}</td><td style="font-size:11.5px;color:#94a3b8">${name}</td><td class="r">${v.orders}</td><td class="r">${v.cases.toLocaleString()}</td><td class="r bold">${$(v.sales)}</td><td class="r"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${Math.min(pct*5,100)}%;background:${bc}"></div></div><span>${P(pct)}</span></div></td><td class="r">${$(v.gp)}</td><td class="r">${mpill(v.margin)}</td><td class="r">${nChains}</td><td class="r">${nCust}</td><td class="r">${P(custPen)}</td></tr>`;
   }).join("");
   document.getElementById("tbl-sku").innerHTML=`<thead><tr><th>Marca</th><th>SKU</th><th>Nombre</th><th class="r">Órdenes</th><th class="r">Cajas</th><th class="r">Venta $</th><th class="r">% Mix</th><th class="r">GP $</th><th class="r">Margen${infoIcon("GP ÷ Ventas de este SKU × 100. Verde ≥30% · Amarillo 20-30% · Rojo <20%.")}</th><th class="r"># Cadenas${infoIcon("Cantidad de cadenas distintas que compraron este SKU en el período — mide qué tan distribuido está, no solo cuánto vende. Un SKU concentrado en 1 cadena es más riesgoso que uno repartido en varias.")}</th><th class="r"># Clientes${infoIcon("Cantidad de clientes (localidades) distintos que compraron este SKU en el período.")}</th><th class="r">% Pen. Cartera${infoIcon("# de Clientes que compran este SKU ÷ Total de clientes en la base (261) × 100 — qué porción de toda tu cartera ya compra este producto.")}</th></tr></thead><tbody>${rows}</tbody>`;
 
@@ -1780,7 +1799,7 @@ function renderBrands(){
   const bottomSkus=sK.slice().sort((a,b)=>sA[a].orders-sA[b].orders).slice(0,8);
   let bottomRows=bottomSkus.map(k=>{
     const v=sA[k],sm=SKUS[k]||{},name=sm.item_name||k,brand=sm.brand||'—',bc=BRAND_COLORS[brand]||"#64748b";
-    return`<tr><td class="bold">${k}</td><td style="font-size:11px;color:#94a3b8">${name}</td><td><span class="pill" style="background:${bc}22;color:${bc};font-size:10px">${brand}</span></td><td class="r">${v.orders}</td><td class="r">${v.cases.toLocaleString()}</td><td class="r">${$(v.sales)}</td></tr>`;
+    return`<tr><td class="bold">${k}</td><td style="font-size:11px;color:#94a3b8">${name}</td><td>${brandBadge(brand,14)} <span style="font-size:11px;color:${bc};font-weight:600">${brand}</span></td><td class="r">${v.orders}</td><td class="r">${v.cases.toLocaleString()}</td><td class="r">${$(v.sales)}</td></tr>`;
   }).join("");
   if(!bottomRows) bottomRows=`<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:16px">Sin data suficiente</td></tr>`;
   document.getElementById("tbl-slow-sku").innerHTML=`<thead><tr><th>SKU</th><th>Nombre</th><th>Marca</th><th class="r">Órdenes</th><th class="r">Cajas</th><th class="r">Ventas $</th></tr></thead><tbody>${bottomRows}</tbody>`;
