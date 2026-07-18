@@ -458,22 +458,24 @@ body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',-app
 }
 .sc-card::before{content:"";position:absolute;top:0;left:0;width:100%;height:2px;background:var(--sc-color,var(--accent));opacity:0.55;}
 .sc-card:hover{border-color:var(--border-strong);transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,0.32);}
-.sc-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:9px;}
+.sc-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px;gap:8px;}
+.sc-label{display:flex;align-items:center;gap:8px;min-width:0;}
 .sc-icon{
-  width:32px;height:32px;border-radius:9px;
+  flex-shrink:0;
+  width:24px;height:24px;border-radius:7px;
   background:var(--sc-tint,rgba(255,255,255,0.05));
   display:flex;align-items:center;justify-content:center;
   color:var(--sc-color,var(--accent));
 }
-.sc-icon svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
-.sc-deltas{display:flex;flex-direction:column;align-items:flex-end;gap:3px;}
+.sc-icon svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.sc-deltas{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0;}
 .sc-delta{font-size:10.5px;font-weight:700;display:inline-flex;align-items:center;gap:3px;letter-spacing:-0.01em;line-height:1;}
 .sc-delta .sc-delta-lbl{font-size:8px;font-weight:800;color:var(--text4);text-transform:uppercase;letter-spacing:0.06em;margin-left:1px;}
 .sc-delta.up{color:var(--green);}
 .sc-delta.down{color:var(--red);}
 .sc-delta.neutral{color:var(--text3);}
-.sc-value{font-size:29px;font-weight:700;letter-spacing:-0.03em;line-height:1.02;color:var(--text);margin-top:6px;}
-.sc-title{font-size:15px;font-weight:600;color:var(--text);text-transform:uppercase;letter-spacing:0.02em;line-height:1.25;}
+.sc-value{font-size:29px;font-weight:700;letter-spacing:-0.03em;line-height:1.02;color:var(--text);margin-top:2px;}
+.sc-title{font-size:14px;font-weight:600;color:var(--text);text-transform:uppercase;letter-spacing:0.02em;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .sc-sub{font-size:10.5px;color:var(--text3);margin-top:5px;font-weight:600;letter-spacing:-0.005em;}
 .sc-spark{margin-top:auto;padding-top:8px;height:38px;}
 .sc-spark-svg{width:100%;height:36px;display:block;}
@@ -1315,10 +1317,9 @@ function scCard(o){
   const tint=o.color+"1f";
   return `<div class="sc-card" style="--sc-color:${o.color};--sc-tint:${tint};cursor:default" ${o.titleAttr?`title="${o.titleAttr}"`:""}>
     <div class="sc-top">
-      <span class="sc-icon">${o.icon}</span>
+      <div class="sc-label"><span class="sc-icon">${o.icon}</span><span class="sc-title">${o.title}</span></div>
       <div class="sc-deltas">${o.mom}${o.yoy}</div>
     </div>
-    <div class="sc-title">${o.title}</div>
     <div class="sc-value">${o.value}</div>
     ${o.sub?`<div class="sc-sub">${o.sub}</div>`:""}
     <div class="sc-spark">${o.spark}</div>
@@ -1328,10 +1329,9 @@ function scCard(o){
 function scPlaceholder(o){
   return `<div class="sc-card sc-ph" style="--sc-color:${o.color};cursor:default" title="${o.note}">
     <div class="sc-top">
-      <span class="sc-icon">${o.icon}</span>
+      <div class="sc-label"><span class="sc-icon">${o.icon}</span><span class="sc-title">${o.title}</span></div>
       <span class="sc-badge-soon">Próximamente</span>
     </div>
-    <div class="sc-title">${o.title}</div>
     <div class="sc-value sc-value-na">N/A</div>
     <div class="sc-ph-note">${o.note}</div>
   </div>`;
