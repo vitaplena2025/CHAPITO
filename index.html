@@ -472,9 +472,9 @@ body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',-app
 .sc-delta.up{color:var(--green);}
 .sc-delta.down{color:var(--red);}
 .sc-delta.neutral{color:var(--text3);}
-.sc-value{font-size:29px;font-weight:700;letter-spacing:-0.03em;line-height:1.02;color:var(--text);}
-.sc-title{font-size:12.5px;font-weight:600;color:var(--text2);margin-top:4px;letter-spacing:-0.01em;}
-.sc-sub{font-size:10.5px;color:var(--text3);margin-top:3px;font-weight:600;letter-spacing:-0.005em;}
+.sc-value{font-size:29px;font-weight:700;letter-spacing:-0.03em;line-height:1.02;color:var(--text);margin-top:6px;}
+.sc-title{font-size:15px;font-weight:600;color:var(--text);text-transform:uppercase;letter-spacing:0.02em;line-height:1.25;}
+.sc-sub{font-size:10.5px;color:var(--text3);margin-top:5px;font-weight:600;letter-spacing:-0.005em;}
 .sc-spark{margin-top:auto;padding-top:8px;height:38px;}
 .sc-spark-svg{width:100%;height:36px;display:block;}
 .sc-ph{opacity:0.52;}
@@ -1318,8 +1318,8 @@ function scCard(o){
       <span class="sc-icon">${o.icon}</span>
       <div class="sc-deltas">${o.mom}${o.yoy}</div>
     </div>
-    <div class="sc-value">${o.value}</div>
     <div class="sc-title">${o.title}</div>
+    <div class="sc-value">${o.value}</div>
     ${o.sub?`<div class="sc-sub">${o.sub}</div>`:""}
     <div class="sc-spark">${o.spark}</div>
   </div>`;
@@ -1331,8 +1331,8 @@ function scPlaceholder(o){
       <span class="sc-icon">${o.icon}</span>
       <span class="sc-badge-soon">Próximamente</span>
     </div>
-    <div class="sc-value sc-value-na">N/A</div>
     <div class="sc-title">${o.title}</div>
+    <div class="sc-value sc-value-na">N/A</div>
     <div class="sc-ph-note">${o.note}</div>
   </div>`;
 }
