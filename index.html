@@ -794,11 +794,14 @@ function brandBadge(brand,size){
   const bc=BRAND_COLORS[brand]||"#64748b";
   return `<span title="${brand}" style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${bc};vertical-align:middle"></span>`;
 }
-// Foto de producto — vive en el Supabase del Sales App de Vitaplena (proyecto distinto a CHAPITO), nombrada por SKU en minúsculas
+// Foto de producto — vive en el Supabase del Sales App de Vitaplena (proyecto distinto a CHAPITO), nombrada por SKU en minúsculas y SIN acentos/diéresis (ej. TÖS-0186 -> tos-0186.jpg)
 const SKU_PHOTO_BASE='https://uxdjiqysuurfgfvjxcqg.supabase.co/storage/v1/object/public/fotos/skus/';
+function normalizeSkuForFile(sku){
+  return String(sku).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+}
 function skuPhoto(sku,size){
   size=size||32;
-  const url=SKU_PHOTO_BASE+encodeURIComponent(String(sku).toLowerCase())+'.jpg';
+  const url=SKU_PHOTO_BASE+encodeURIComponent(normalizeSkuForFile(sku))+'.jpg';
   return `<img src="${url}" alt="${sku}" title="${sku}" style="width:${size}px;height:${size}px;object-fit:cover;border-radius:6px;background:rgba(255,255,255,0.05);vertical-align:middle" onerror="this.onerror=null;this.style.visibility='hidden'">`;
 }
 const REP_COLORS=['#34A852','#6366f1','#F4C124','#ec4899','#10b981','#f97316','#a855f7','#06b6d4','#84cc16'];
