@@ -454,9 +454,8 @@ body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',-app
   box-shadow:0 1px 3px rgba(0,0,0,0.28);
   transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
   position:relative;
-  overflow:hidden;
 }
-.sc-card::before{content:"";position:absolute;top:0;left:0;width:100%;height:2px;background:var(--sc-color,var(--accent));opacity:0.55;}
+.sc-card::before{content:"";position:absolute;top:0;left:0;width:100%;height:2px;background:var(--sc-color,var(--accent));opacity:0.55;border-radius:14px 14px 0 0;}
 .sc-card:hover{border-color:var(--border-strong);transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,0.32);}
 .sc-top{display:flex;flex-direction:column;gap:6px;margin-bottom:10px;}
 .sc-label{display:flex;align-items:center;gap:8px;min-width:0;}
@@ -562,17 +561,16 @@ th .info-tip::after{top:auto;bottom:100%;border-top-color:transparent;border-bot
 .data-table{width:100%;border-collapse:collapse;font-size:13px;}
 .data-table th{
   background:var(--surface2);
-  color:var(--text3);
+  color:var(--text);
   font-weight:700;
   text-align:left;
   padding:12px 14px;
   text-transform:uppercase;
-  font-size:10.5px;
-  letter-spacing:0.06em;
+  font-size:12.5px;
+  letter-spacing:0.02em;
   border-bottom:1px solid var(--border);
 }
 .data-table td{padding:11px 14px;color:var(--text);border-bottom:1px solid rgba(255,255,255,0.03);}
-#tbl-sku th{font-size:12.5px;color:var(--text);letter-spacing:0.02em;}
 .data-table tr:hover td{background:rgba(255,255,255,0.02);}
 .data-table td.r,.data-table th.r{text-align:right;}
 .data-table td.bold{font-weight:600;}
@@ -795,6 +793,13 @@ function brandBadge(brand,size){
   if(BRAND_LOGOS[brand]) return `<img src="${BRAND_LOGOS[brand]}" alt="${brand}" title="${brand}" style="height:${size}px;width:auto;vertical-align:middle;display:inline-block">`;
   const bc=BRAND_COLORS[brand]||"#64748b";
   return `<span title="${brand}" style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${bc};vertical-align:middle"></span>`;
+}
+// Foto de producto — vive en el Supabase del Sales App de Vitaplena (proyecto distinto a CHAPITO), nombrada por SKU en minúsculas
+const SKU_PHOTO_BASE='https://uxdjiqysuurfgfvjxcqg.supabase.co/storage/v1/object/public/fotos/skus/';
+function skuPhoto(sku,size){
+  size=size||32;
+  const url=SKU_PHOTO_BASE+encodeURIComponent(String(sku).toLowerCase())+'.jpg';
+  return `<img src="${url}" alt="${sku}" title="${sku}" style="width:${size}px;height:${size}px;object-fit:cover;border-radius:6px;background:rgba(255,255,255,0.05);vertical-align:middle" onerror="this.onerror=null;this.style.visibility='hidden'">`;
 }
 const REP_COLORS=['#34A852','#6366f1','#F4C124','#ec4899','#10b981','#f97316','#a855f7','#06b6d4','#84cc16'];
 const CHANNEL_ORDER=['Club','Mass Market','Supermercados','Specialty Store','Restaurantes','Reposteria','Panadería/Cafetería','Coffee Shop','Health Foods','Farmacias','Gasolineras','Colmado','Meal Prep','Otros'];
@@ -1772,15 +1777,18 @@ function renderBrands(){
     <div class="kpi" style="--kpi-color:#F4C124"><div class="kpi-label">Margen Promedio${infoIcon("GP total ÷ Ventas totales del portafolio filtrado (por Marca/SKU/Canal). Ponderado por venta, no promedio simple entre marcas.")}</div><div class="kpi-value">${P(avgMargin)}</div></div>
     <div class="kpi" style="--kpi-color:#8b5cf6"><div class="kpi-label">SKUs Vendidos${infoIcon("SKUs con al menos 1 venta en el período filtrado ÷ Total de SKUs en el catálogo — qué porción de tu portafolio realmente se movió.")}</div><div class="kpi-value">${skusVendidos}/${skusTotal}</div><div class="kpi-sub">${P(skuPct)} del catálogo</div></div>
     <div class="kpi" style="--kpi-color:#ec4899"><div class="kpi-label">Ventas Totales</div><div class="kpi-value">${$(ts)}</div></div>`;
-  mkChart("ch-brand-bar",{type:"bar",data:{labels:bK,datasets:[{label:"Ventas",data:bK.map(k=>bA[k].sales),backgroundColor:bK.map(k=>BRAND_COLORS[k]||"#64748b"),borderRadius:6},{label:"GP",data:bK.map(k=>bA[k].gp),backgroundColor:bK.map(k=>(BRAND_COLORS[k]||"#64748b")+"88"),borderRadius:6}]},options:{...yDollar(),responsive:true,plugins:{...yDollar().plugins,tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${$(ctx.parsed.y)}`}}}}});
-  mkChart("ch-brand-pie",{type:"doughnut",data:{labels:bK,datasets:[{data:bK.map(k=>bA[k].sales),backgroundColor:bK.map(k=>BRAND_COLORS[k]||"#64748b"),borderWidth:2,borderColor:"#111827"}]},options:{responsive:true,cutout:"62%",plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${$(ctx.parsed)}`}}}}});
+
+  const dlBar={display:true,color:"#e5e7eb",anchor:"end",align:"end",offset:1,font:{family:"Plus Jakarta Sans",size:9,weight:700},formatter:v=>kFmt(v)};
+  mkChart("ch-brand-bar",{type:"bar",data:{labels:bK,datasets:[{label:"Ventas",data:bK.map(k=>bA[k].sales),backgroundColor:bK.map(k=>BRAND_COLORS[k]||"#64748b"),borderRadius:6,datalabels:dlBar},{label:"GP",data:bK.map(k=>bA[k].gp),backgroundColor:bK.map(k=>(BRAND_COLORS[k]||"#64748b")+"88"),borderRadius:6,datalabels:dlBar}]},options:{...yDollar(),responsive:true,layout:{padding:{top:18}},plugins:{...yDollar().plugins,tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${$(ctx.parsed.y)}`}}}}});
+
+  mkChart("ch-brand-pie",{type:"doughnut",data:{labels:bK,datasets:[{data:bK.map(k=>bA[k].sales),backgroundColor:bK.map(k=>BRAND_COLORS[k]||"#64748b"),borderWidth:2,borderColor:"#111827"}]},options:{responsive:true,cutout:"62%",plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${$(ctx.parsed)}`}},datalabels:{display:true,color:"#fff",font:{family:"Plus Jakarta Sans",size:11,weight:700},formatter:v=>kFmt(v),textStrokeColor:"rgba(0,0,0,0.55)",textStrokeWidth:3}}}});
   document.getElementById("brand-pie-legend").innerHTML = bK.map(k=>{
     const pct=ts>0?bA[k].sales/ts*100:0;
     return `<div style="display:flex;align-items:center;gap:8px">${brandBadge(k,16)}<span style="font-size:11.5px;color:var(--text2);font-weight:600">${P(pct)}</span></div>`;
   }).join("");
 
-  // Margen % por Marca (nuevo) — mismos umbrales de color que el resto del dashboard (mc)
-  mkChart("ch-brand-margin",{type:"bar",data:{labels:bK,datasets:[{label:"Margen %",data:bK.map(k=>bA[k].margin),backgroundColor:bK.map(k=>mc(bA[k].margin)),borderRadius:6}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`Margen: ${ctx.parsed.y.toFixed(1)}%`}}},scales:{y:{max:65,ticks:{color:"#94a3b8",font:{family:"Plus Jakarta Sans"},callback:v=>v+"%"},grid:{color:"rgba(255,255,255,.06)"}},x:{ticks:{color:"#94a3b8",font:{family:"Plus Jakarta Sans"}},grid:{color:"rgba(255,255,255,.04)"}}}}});
+  // Margen % por Marca — mismos umbrales de color que el resto del dashboard (mc)
+  mkChart("ch-brand-margin",{type:"bar",data:{labels:bK,datasets:[{label:"Margen %",data:bK.map(k=>bA[k].margin),backgroundColor:bK.map(k=>mc(bA[k].margin)),borderRadius:6,datalabels:{display:true,color:"#e5e7eb",anchor:"end",align:"end",offset:1,font:{family:"Plus Jakarta Sans",size:10,weight:700},formatter:v=>v.toFixed(1)+"%"}}]},options:{responsive:true,layout:{padding:{top:18}},plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`Margen: ${ctx.parsed.y.toFixed(1)}%`}}},scales:{y:{max:65,ticks:{color:"#94a3b8",font:{family:"Plus Jakarta Sans"},callback:v=>v+"%"},grid:{color:"rgba(255,255,255,.06)"}},x:{ticks:{color:"#94a3b8",font:{family:"Plus Jakarta Sans"}},grid:{color:"rgba(255,255,255,.04)"}}}}});
 
   const sA=agg(d,r=>r.sku);
   const sK=Object.keys(sA).filter(k=>sA[k].sales>0).sort((a,b)=>sA[b].sales-sA[a].sales);
@@ -1801,27 +1809,27 @@ function renderBrands(){
     const nChains=skuChains[k]?skuChains[k].size:0;
     const nCust=skuCustomersSet[k]?skuCustomersSet[k].size:0;
     const custPen=totalCustomerBase>0?nCust/totalCustomerBase*100:0;
-    return`<tr><td>${brandBadge(brand,20)}</td><td class="bold">${k}</td><td style="font-size:11.5px;color:#94a3b8">${name}</td><td class="r">${v.orders}</td><td class="r">${v.cases.toLocaleString()}</td><td class="r bold">${$(v.sales)}</td><td class="r"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${Math.min(pct*5,100)}%;background:${bc}"></div></div><span>${P(pct)}</span></div></td><td class="r">${$(v.gp)}</td><td class="r">${mpill(v.margin)}</td><td class="r">${nChains}</td><td class="r">${nCust}</td><td class="r">${P(custPen)}</td></tr>`;
+    return`<tr><td>${skuPhoto(k,30)}</td><td>${brandBadge(brand,20)}</td><td class="bold">${k}</td><td style="font-size:11.5px;color:#94a3b8">${name}</td><td class="r">${v.orders}</td><td class="r">${v.cases.toLocaleString()}</td><td class="r bold">${$(v.sales)}</td><td class="r"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${Math.min(pct*5,100)}%;background:${bc}"></div></div><span>${P(pct)}</span></div></td><td class="r">${$(v.gp)}</td><td class="r">${mpill(v.margin)}</td><td class="r">${nChains}</td><td class="r">${nCust}</td><td class="r">${P(custPen)}</td></tr>`;
   }).join("");
-  document.getElementById("tbl-sku").innerHTML=`<thead><tr><th>Marca</th><th>SKU</th><th>Nombre</th><th class="r">Órdenes</th><th class="r">Cajas</th><th class="r">Venta $</th><th class="r">% Mix</th><th class="r">GP $</th><th class="r">Margen${infoIcon("GP ÷ Ventas de este SKU × 100. Verde ≥30% · Amarillo 20-30% · Rojo <20%.")}</th><th class="r"># Cadenas${infoIcon("Cantidad de cadenas distintas que compraron este SKU en el período — mide qué tan distribuido está, no solo cuánto vende. Un SKU concentrado en 1 cadena es más riesgoso que uno repartido en varias.")}</th><th class="r"># Clientes${infoIcon("Cantidad de clientes (localidades) distintos que compraron este SKU en el período.")}</th><th class="r">% Pen. Cartera${infoIcon("# de Clientes que compran este SKU ÷ Total de clientes en la base (261) × 100 — qué porción de toda tu cartera ya compra este producto.")}</th></tr></thead><tbody>${rows}</tbody>`;
+  document.getElementById("tbl-sku").innerHTML=`<thead><tr><th>Foto</th><th>Marca</th><th>SKU</th><th>Nombre</th><th class="r">Órdenes</th><th class="r">Cajas</th><th class="r">Venta $</th><th class="r">% Mix</th><th class="r">GP $</th><th class="r">Margen${infoIcon("GP ÷ Ventas de este SKU × 100. Verde ≥30% · Amarillo 20-30% · Rojo <20%.")}</th><th class="r"># Cadenas${infoIcon("Cantidad de cadenas distintas que compraron este SKU en el período — mide qué tan distribuido está, no solo cuánto vende. Un SKU concentrado en 1 cadena es más riesgoso que uno repartido en varias.")}</th><th class="r"># Clientes${infoIcon("Cantidad de clientes (localidades) distintos que compraron este SKU en el período.")}</th><th class="r">% Pen. Cartera${infoIcon("# de Clientes que compran este SKU ÷ Total de clientes en la base (261) × 100 — qué porción de toda tu cartera ya compra este producto.")}</th></tr></thead><tbody>${rows}</tbody>`;
 
-  // SKUs de alta rotación: mayor cantidad de órdenes únicas
-  const topSkus=sK.slice().sort((a,b)=>sA[b].orders-sA[a].orders).slice(0,8);
+  // SKUs de alta rotación: mayor cantidad de CAJAS movidas (rotación real, no solo frecuencia de órdenes)
+  const topSkus=sK.slice().sort((a,b)=>sA[b].cases-sA[a].cases).slice(0,10);
   let topRows=topSkus.map(k=>{
     const v=sA[k],sm=SKUS[k]||{},name=sm.item_name||k,brand=sm.brand||'—';
-    return`<tr><td class="bold">${k}</td><td style="font-size:11px;color:#94a3b8">${name}</td><td>${brandBadge(brand,14)}</td><td class="r">${v.orders}</td><td class="r">${v.cases.toLocaleString()}</td><td class="r">${$(v.sales)}</td></tr>`;
+    return`<tr><td>${skuPhoto(k,26)}</td><td class="bold">${k}</td><td style="font-size:11px;color:#94a3b8">${name}</td><td>${brandBadge(brand,14)}</td><td class="r">${v.orders}</td><td class="r bold">${v.cases.toLocaleString()}</td><td class="r">${$(v.sales)}</td><td class="r">${mpill(v.margin)}</td></tr>`;
   }).join("");
-  if(!topRows) topRows=`<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:16px">Sin data suficiente</td></tr>`;
-  document.getElementById("tbl-fast-sku").innerHTML=`<thead><tr><th>SKU</th><th>Nombre</th><th>Marca</th><th class="r">Órdenes</th><th class="r">Cajas</th><th class="r">Ventas $</th></tr></thead><tbody>${topRows}</tbody>`;
+  if(!topRows) topRows=`<tr><td colspan="8" style="text-align:center;color:var(--text3);padding:16px">Sin data suficiente</td></tr>`;
+  document.getElementById("tbl-fast-sku").innerHTML=`<thead><tr><th>Foto</th><th>SKU</th><th>Nombre</th><th>Marca</th><th class="r">Órdenes</th><th class="r">Cajas</th><th class="r">Ventas $</th><th class="r">Margen</th></tr></thead><tbody>${topRows}</tbody>`;
 
-  // SKUs de baja rotación: menor cantidad de órdenes únicas entre los SKUs con al menos 1 venta en el período
-  const bottomSkus=sK.slice().sort((a,b)=>sA[a].orders-sA[b].orders).slice(0,8);
+  // SKUs de baja rotación: menor cantidad de CAJAS movidas, entre los SKUs con al menos 1 venta en el período
+  const bottomSkus=sK.slice().sort((a,b)=>sA[a].cases-sA[b].cases).slice(0,10);
   let bottomRows=bottomSkus.map(k=>{
     const v=sA[k],sm=SKUS[k]||{},name=sm.item_name||k,brand=sm.brand||'—';
-    return`<tr><td class="bold">${k}</td><td style="font-size:11px;color:#94a3b8">${name}</td><td>${brandBadge(brand,14)}</td><td class="r">${v.orders}</td><td class="r">${v.cases.toLocaleString()}</td><td class="r">${$(v.sales)}</td></tr>`;
+    return`<tr><td>${skuPhoto(k,26)}</td><td class="bold">${k}</td><td style="font-size:11px;color:#94a3b8">${name}</td><td>${brandBadge(brand,14)}</td><td class="r">${v.orders}</td><td class="r bold">${v.cases.toLocaleString()}</td><td class="r">${$(v.sales)}</td><td class="r">${mpill(v.margin)}</td></tr>`;
   }).join("");
-  if(!bottomRows) bottomRows=`<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:16px">Sin data suficiente</td></tr>`;
-  document.getElementById("tbl-slow-sku").innerHTML=`<thead><tr><th>SKU</th><th>Nombre</th><th>Marca</th><th class="r">Órdenes</th><th class="r">Cajas</th><th class="r">Ventas $</th></tr></thead><tbody>${bottomRows}</tbody>`;
+  if(!bottomRows) bottomRows=`<tr><td colspan="8" style="text-align:center;color:var(--text3);padding:16px">Sin data suficiente</td></tr>`;
+  document.getElementById("tbl-slow-sku").innerHTML=`<thead><tr><th>Foto</th><th>SKU</th><th>Nombre</th><th>Marca</th><th class="r">Órdenes</th><th class="r">Cajas</th><th class="r">Ventas $</th><th class="r">Margen</th></tr></thead><tbody>${bottomRows}</tbody>`;
 }
 
 function renderReps(){
