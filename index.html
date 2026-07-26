@@ -605,6 +605,14 @@ th .info-tip::after{top:auto;bottom:100%;border-top-color:transparent;border-bot
 .portfolio-insight-sub{font-size:11px;color:var(--text2);font-weight:550;line-height:1.45;margin-top:7px;}
 .portfolio-mini-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding-top:7px;margin-top:7px;border-top:1px solid rgba(255,255,255,.055);font-size:11px;color:var(--text2);}
 .portfolio-mini-row strong{color:var(--text);font-size:12px;}
+.portfolio-chip-section{margin-top:9px;padding-top:8px;border-top:1px solid rgba(255,255,255,.055);}
+.portfolio-chip-title{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;font-weight:700;margin-bottom:6px;}
+.portfolio-chip-list{display:flex;flex-wrap:wrap;gap:5px;}
+.portfolio-chip{display:inline-flex;align-items:center;gap:5px;max-width:100%;padding:4px 7px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.035);border-radius:7px;font-size:9.5px;color:var(--text2);line-height:1.2;}
+.portfolio-chip strong{color:var(--text);font-size:9.5px;white-space:nowrap;}
+.portfolio-chip-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:145px;}
+.portfolio-denominator-note{font-size:9.5px;color:var(--text3);line-height:1.4;margin-top:7px;}
+.portfolio-insight-label .info-icon{margin-left:2px;margin-right:auto;}
 .portfolio-status{display:inline-flex;align-items:center;gap:5px;font-size:8.5px;font-weight:800;text-transform:uppercase;letter-spacing:.065em;padding:3px 7px;border-radius:6px;background:rgba(16,185,129,.12);color:var(--green);margin-left:auto;}
 .portfolio-status.soon{background:rgba(148,163,184,.09);color:var(--text3);}
 .portfolio-coming-soon{opacity:.48;filter:grayscale(.35);}
@@ -676,17 +684,17 @@ th .info-tip::after{top:auto;bottom:100%;border-top-color:transparent;border-bot
   <div class="portfolio-decision-grid" id="portfolio-decision-kpis"></div>
   <div class="chart-grid chart-grid-2">
     <div class="chart-card">
-      <div class="chart-title"><span class="accent-dot"></span>Contribution to Gross Profit<span class="info-icon">i<span class="info-tip">Aporte de cada marca al Gross Profit total. Permite distinguir las marcas que venden más de las que realmente generan más utilidad.</span></span></div>
+      <div class="chart-title"><span class="accent-dot"></span>Contribution to Gross Profit<span class="info-icon">i<span class="info-tip">Mide qué porción del Gross Profit total aporta cada marca. Fórmula por marca: GP de la marca ÷ GP total × 100; GP = Ventas netas − COGS. Una contribución alta indica que la marca es relevante para la utilidad, aunque no sea la #1 en ventas.</span></span></div>
       <canvas id="ch-brand-gp-contribution" height="240"></canvas>
     </div>
     <div class="chart-card">
-      <div class="chart-title"><span class="accent-dot"></span>Portfolio Pareto 80/20<span class="info-icon">i<span class="info-tip">Ordena los SKUs de mayor a menor y muestra el porcentaje acumulado de ventas y GP para identificar cuántos productos generan la mayoría del negocio.</span></span></div>
+      <div class="chart-title"><span class="accent-dot"></span>Portfolio Pareto 80/20<span class="info-icon">i<span class="info-tip">Mide cuántos SKUs con ventas activas se necesitan para acumular 80% de las ventas o del GP. Fórmula: suma acumulada del indicador ÷ total del indicador entre SKUs vendidos. El denominador excluye SKUs sin ventas bajo el filtro porque no contribuyen al resultado observado; el total de catálogo se muestra aparte como contexto.</span></span></div>
       <canvas id="ch-portfolio-pareto" height="240"></canvas>
     </div>
   </div>
   <div class="chart-grid" style="grid-template-columns:1fr">
     <div class="chart-card">
-      <div class="chart-title"><span class="accent-dot"></span>Portfolio Matrix — Mix vs Growth<span class="info-icon">i<span class="info-tip">X = participación de ventas, Y = crecimiento contra el período comparable anterior, tamaño = Gross Profit. Se habilita solo cuando existe un período anterior completo.</span></span></div>
+      <div class="chart-title"><span class="accent-dot"></span>Portfolio Matrix — Mix vs Growth<span class="info-icon">i<span class="info-tip">Compara posición y momentum por marca. X = Ventas de la marca ÷ Ventas totales × 100. Y = (Ventas período actual − Ventas período anterior) ÷ Ventas período anterior × 100. Tamaño = Gross Profit. Arriba/derecha sugiere marcas grandes y en crecimiento; abajo/derecha indica marcas grandes que pierden impulso.</span></span></div>
       <div id="portfolio-matrix-wrap"><canvas id="ch-portfolio-matrix" height="190"></canvas></div>
     </div>
   </div>
@@ -1882,14 +1890,23 @@ function renderBrands(){
   availability.push({name:"Portfolio Matrix",ok:prevPeriod.available,reason:prevPeriod.available?`Comparable period: ${prevPeriod.months.map(m=>MN_SHORT[m]).join(", ")}`:prevPeriod.reason});
   document.getElementById("portfolio-data-note").innerHTML=`<span class="dot"></span><span>${availability.filter(x=>x.ok).length}/5 KPIs available with current data · ${availability.filter(x=>!x.ok).map(x=>x.name+": "+x.reason).join(" · ")||"All required data is available"}</span>`;
 
-  const availableCard=(color,label,value,sub,rows="")=>`<div class="portfolio-insight-card" style="--insight-color:${color}"><div class="portfolio-insight-label">${label}<span class="portfolio-status">Disponible</span></div><div class="portfolio-insight-value">${value}</div><div class="portfolio-insight-sub">${sub}</div>${rows}</div>`;
-  const soonCard=(color,label,note)=>`<div class="portfolio-insight-card portfolio-coming-soon" style="--insight-color:${color}" title="${note}"><div class="portfolio-insight-label">${label}<span class="portfolio-status soon">Coming Soon</span></div><div class="portfolio-insight-value">N/A</div><div class="portfolio-insight-sub">${note}</div></div>`;
+  const availableCard=(color,label,value,sub,rows="",info="")=>`<div class="portfolio-insight-card" style="--insight-color:${color}"><div class="portfolio-insight-label"><span>${label}</span>${info?infoIcon(info):""}<span class="portfolio-status">Disponible</span></div><div class="portfolio-insight-value">${value}</div><div class="portfolio-insight-sub">${sub}</div>${rows}</div>`;
+  const soonCard=(color,label,note,info="")=>`<div class="portfolio-insight-card portfolio-coming-soon" style="--insight-color:${color}" title="${note}"><div class="portfolio-insight-label"><span>${label}</span>${info?infoIcon(info):""}<span class="portfolio-status soon">Coming Soon</span></div><div class="portfolio-insight-value">N/A</div><div class="portfolio-insight-sub">${note}</div></div>`;
+  const catalogSkuCount=Object.keys(SKUS).length;
+  const activeSkuCount=sK.length;
+  const brandChips=top3Brands.map(k=>`<span class="portfolio-chip"><span class="portfolio-chip-name">${k}</span><strong>${P(ts>0?bA[k].sales/ts*100:0)}</strong></span>`).join("");
+  const skuChips=top10Skus.map(k=>{const sm=SKUS[k]||{};const nm=sm.item_name||k;return `<span class="portfolio-chip" title="${k} · ${nm}"><span class="portfolio-chip-name">${k} · ${nm}</span><strong>${P(ts>0?sA[k].sales/ts*100:0)}</strong></span>`;}).join("");
+  const INFO_GP="Mide la contribución de cada marca a la utilidad bruta. Fórmula: GP de la marca ÷ GP total × 100; GP = Ventas netas − COGS. Una marca con alta contribución sostiene una parte importante de la rentabilidad del portafolio.";
+  const INFO_PARETO="Identifica cuántos SKUs explican al menos 80% de las ventas. Fórmula: ventas acumuladas de los SKUs ordenados de mayor a menor ÷ ventas totales de los SKUs con ventas activas. Se usan SKUs vendidos como denominador porque los SKUs sin movimiento no aportan al resultado del filtro; el catálogo total se muestra aparte.";
+  const INFO_CONC="Mide dependencia del portafolio. Fórmulas: ventas Top 3 marcas ÷ ventas totales y ventas Top 10 SKUs ÷ ventas totales. Un porcentaje alto facilita foco comercial, pero también implica mayor riesgo si una marca o SKU pierde distribución, inventario o demanda.";
+  const INFO_MARGIN="Mide el margen real del portafolio ponderado por el valor vendido. Fórmula: GP total ÷ Ventas netas totales × 100. No es un promedio simple de los márgenes de cada SKU; los productos que más venden tienen mayor peso.";
+  const INFO_MATRIX="Posiciona cada marca por escala y crecimiento. X = mix de ventas; Y = crecimiento vs. período comparable anterior; tamaño = GP. Marcas arriba y a la derecha combinan mayor participación y crecimiento; marcas abajo requieren revisar pérdida de momentum.";
   document.getElementById("portfolio-decision-kpis").innerHTML=[
-    hasCostData?availableCard("#6366f1","Contribution to Gross Profit",top3Brands[0]?`${brandBadge(top3Brands[0],22)} ${P(totalGp>0?bA[top3Brands[0]].gp/totalGp*100:0)}`:"—",`Top GP contributor · ${$(bA[top3Brands[0]]?.gp||0)} GP`,`<div class="portfolio-mini-row"><span>GP Total</span><strong>${$(totalGp)}</strong></div>`):soonCard("#6366f1","Contribution to Gross Profit","Requiere landed_cost válido por SKU para calcular Gross Profit."),
-    availableCard("#34A852","Portfolio Pareto — Sales",`${paretoSales.count} of ${paretoSales.total} SKUs`,`${P(paretoSales.pctItems)} of active SKUs generate ${P(paretoSales.captured)} of sales`,`<div class="portfolio-mini-row"><span>Pareto GP</span><strong>${hasCostData?`${paretoGp.count} SKUs · ${P(paretoGp.captured)}`:"Coming Soon"}</strong></div>`),
-    availableCard("#F4C124","Portfolio Concentration",`${P(ts>0?top3Sales/ts*100:0)}`,`of sales generated by Top 3 Brands`,`<div class="portfolio-mini-row"><span>Top 10 SKUs</span><strong>${P(ts>0?top10Sales/ts*100:0)} Sales</strong></div><div class="portfolio-mini-row"><span>Top 3 Brands GP</span><strong>${hasCostData?P(totalGp>0?top3Gp/totalGp*100:0):"Coming Soon"}</strong></div>`),
-    hasCostData?availableCard("#ec4899","Weighted Gross Margin",P(avgMargin),"Actual portfolio margin weighted by net sales",`<div class="portfolio-mini-row"><span>Gross Profit</span><strong>${$(totalGp)}</strong></div>`):soonCard("#ec4899","Weighted Gross Margin","Requiere landed_cost válido por SKU; no se utilizará un promedio simple."),
-    prevPeriod.available?availableCard("#a855f7","Portfolio Matrix","Available",`Growth compares selected period vs ${prevPeriod.months.map(m=>MN_SHORT[m]).join(", ")}`):soonCard("#a855f7","Portfolio Matrix",prevPeriod.reason)
+    hasCostData?availableCard("#6366f1","Contribution to Gross Profit",top3Brands[0]?`${brandBadge(top3Brands[0],22)} ${P(totalGp>0?bA[top3Brands[0]].gp/totalGp*100:0)}`:"—",`Top GP contributor · ${$(bA[top3Brands[0]]?.gp||0)} GP`,`<div class="portfolio-mini-row"><span>GP Total</span><strong>${$(totalGp)}</strong></div>`,INFO_GP):soonCard("#6366f1","Contribution to Gross Profit","Requiere landed_cost válido por SKU para calcular Gross Profit.",INFO_GP),
+    availableCard("#34A852","Portfolio Pareto — Sales",`${paretoSales.count} de ${activeSkuCount} SKUs con ventas`,`${P(paretoSales.pctItems)} de los SKUs vendidos generan ${P(paretoSales.captured)} de las ventas`,`<div class="portfolio-mini-row"><span>Base analizada</span><strong>${activeSkuCount} con ventas · ${catalogSkuCount} catálogo</strong></div><div class="portfolio-mini-row"><span>Pareto GP</span><strong>${hasCostData?`${paretoGp.count} de ${paretoGp.total} · ${P(paretoGp.captured)}`:"Coming Soon"}</strong></div><div class="portfolio-denominator-note">El denominador usa solo SKUs con ventas activas bajo los filtros actuales; los SKUs sin movimiento no contribuyen al 80% observado.</div>`,INFO_PARETO),
+    availableCard("#F4C124","Portfolio Concentration",`${P(ts>0?top3Sales/ts*100:0)}`,`de las ventas proviene de las Top 3 marcas`,`<div class="portfolio-mini-row"><span>Top 10 SKUs</span><strong>${P(ts>0?top10Sales/ts*100:0)} Sales</strong></div><div class="portfolio-mini-row"><span>Top 3 Brands GP</span><strong>${hasCostData?P(totalGp>0?top3Gp/totalGp*100:0):"Coming Soon"}</strong></div><div class="portfolio-chip-section"><div class="portfolio-chip-title">Top 3 Brands · contribución a ventas</div><div class="portfolio-chip-list">${brandChips||"—"}</div></div><div class="portfolio-chip-section"><div class="portfolio-chip-title">Top 10 SKUs · contribución a ventas</div><div class="portfolio-chip-list">${skuChips||"—"}</div></div>`,INFO_CONC),
+    hasCostData?availableCard("#ec4899","Weighted Gross Margin",P(avgMargin),"Actual portfolio margin weighted by net sales",`<div class="portfolio-mini-row"><span>Gross Profit</span><strong>${$(totalGp)}</strong></div>`,INFO_MARGIN):soonCard("#ec4899","Weighted Gross Margin","Requiere landed_cost válido por SKU; no se utilizará un promedio simple.",INFO_MARGIN),
+    prevPeriod.available?availableCard("#a855f7","Portfolio Matrix","Available",`Growth compares selected period vs ${prevPeriod.months.map(m=>MN_SHORT[m]).join(", ")}`,"",INFO_MATRIX):soonCard("#a855f7","Portfolio Matrix",prevPeriod.reason,INFO_MATRIX)
   ].join("");
 
   if(hasCostData){
