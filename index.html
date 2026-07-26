@@ -660,6 +660,8 @@ th .info-tip::after{top:auto;bottom:100%;border-top-color:transparent;border-bot
 .customer-mini-table td strong{color:var(--text);}
 .customer-mini-table .r{text-align:right;}
 .customer-score-pill{display:inline-flex;min-width:34px;justify-content:center;padding:3px 7px;border-radius:10px;font-size:10px;font-weight:800;}
+.customer-segment-chart-wrap{position:relative;width:100%;height:320px;max-height:320px;overflow:hidden;}
+.customer-segment-chart-wrap canvas{display:block;width:100%!important;height:100%!important;max-height:320px!important;}
 .customer-segment-summary{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:10px;}
 .customer-segment-chip{padding:8px 9px;border:1px solid var(--border);border-radius:8px;background:rgba(255,255,255,.025);display:flex;justify-content:space-between;gap:8px;font-size:10px;color:var(--text2);}
 .customer-segment-chip strong{color:var(--text);}
@@ -830,7 +832,7 @@ th .info-tip::after{top:auto;bottom:100%;border-top-color:transparent;border-bot
   <div class="customer-analysis-grid" id="customer-intelligence-visuals">
     <div class="chart-card">
       <div class="chart-title"><span class="accent-dot"></span>Customer Segmentation Matrix<span class="info-icon">i<span class="info-tip">Clasifica clientes activos en cuatro cuadrantes usando las medianas del filtro actual. Fórmula: eje X = ventas por cliente; eje Y = margen bruto. Strategic = ventas y margen sobre la mediana; Volume = ventas altas y margen bajo; Growth = ventas bajas y margen alto; At Risk = ambos bajo la mediana. Sirve para priorizar defensa, rentabilidad y desarrollo.</span></span></div>
-      <canvas id="ch-customer-segments" height="245"></canvas>
+      <div class="customer-segment-chart-wrap"><canvas id="ch-customer-segments"></canvas></div>
       <div id="customer-segment-summary" class="customer-segment-summary"></div>
     </div>
     <div class="chart-card">
@@ -2191,7 +2193,7 @@ function renderCustomerIntelligence(d){
   const segments={Strategic:[],Volume:[],Growth:[],"At Risk":[]};
   names.forEach(k=>{const v=cur[k];const seg=v.sales>=salesMed?(v.margin>=marginMed?'Strategic':'Volume'):(v.margin>=marginMed?'Growth':'At Risk');segments[seg].push(k);});
   const segColors={Strategic:'#10b981',Volume:'#F4C124',Growth:'#6366f1','At Risk':'#ef4444'};
-  mkChart('ch-customer-segments',{type:'scatter',data:{datasets:Object.entries(segments).map(([seg,ks])=>({label:seg,data:ks.map(k=>({x:cur[k].sales,y:cur[k].margin,customer:k})),backgroundColor:segColors[seg],pointRadius:5,pointHoverRadius:7}))},options:{responsive:true,maintainAspectRatio:false,scales:{x:{type:'linear',grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#94a3b8',callback:v=>'$'+Number(v).toLocaleString('en-US',{notation:'compact'})},title:{display:true,text:'Ventas por cliente',color:'#94a3b8'}},y:{grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#94a3b8',callback:v=>v+'%'},title:{display:true,text:'Margen %',color:'#94a3b8'}}},plugins:{legend:{labels:{color:'#cbd5e1',boxWidth:10}},tooltip:{callbacks:{label:ctx=>`${ctx.raw.customer}: ${$(ctx.raw.x)} · ${P(ctx.raw.y)}`}}}}});
+  mkChart('ch-customer-segments',{type:'scatter',data:{datasets:Object.entries(segments).map(([seg,ks])=>({label:seg,data:ks.map(k=>({x:cur[k].sales,y:cur[k].margin,customer:k})),backgroundColor:segColors[seg],pointRadius:5,pointHoverRadius:7}))},options:{responsive:true,maintainAspectRatio:false,animation:false,resizeDelay:150,scales:{x:{type:'linear',grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#94a3b8',callback:v=>'$'+Number(v).toLocaleString('en-US',{notation:'compact'})},title:{display:true,text:'Ventas por cliente',color:'#94a3b8'}},y:{grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#94a3b8',callback:v=>v+'%'},title:{display:true,text:'Margen %',color:'#94a3b8'}}},plugins:{legend:{labels:{color:'#cbd5e1',boxWidth:10}},tooltip:{callbacks:{label:ctx=>`${ctx.raw.customer}: ${$(ctx.raw.x)} · ${P(ctx.raw.y)}`}}}}});
   document.getElementById('customer-segment-summary').innerHTML=Object.entries(segments).map(([seg,ks])=>`<div class="customer-segment-chip"><span>${seg}</span><strong style="color:${segColors[seg]}">${ks.length}</strong></div>`).join('');
 
   // CLV proxy
