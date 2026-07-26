@@ -347,7 +347,7 @@ body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',-app
   padding:7px 30px 7px 12px;
 }
 
-/* REPORTING COMPARISON STUDIO */
+/* COMPARE & ANALYZE STUDIO */
 .reporting-builder{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:18px;}
 .reporting-builder-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;align-items:end;}
 .reporting-field label{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;font-weight:700;margin-bottom:6px;}
@@ -376,6 +376,15 @@ body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',-app
 .reporting-chart-wrap{height:320px;max-height:320px;position:relative;}
 .reporting-empty{padding:34px 18px;text-align:center;color:var(--text3);border:1px dashed var(--border-strong);border-radius:12px;}
 @media(max-width:900px){.reporting-builder-grid{grid-template-columns:repeat(2,minmax(0,1fr));}.reporting-entities,.reporting-summary{grid-template-columns:repeat(2,minmax(0,1fr));}}
+
+.compare-mode-switch{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border);}
+.compare-mode-btn.active{background:var(--accent);color:#07120a;border-color:var(--accent);}
+.reporting-builder[data-mode="analyze"] .compare-only{display:none!important;}
+.reporting-builder[data-mode="compare"] .analyze-only{display:none!important;}
+.reporting-builder[data-mode="analyze"] .reporting-builder-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+.reporting-builder[data-mode="analyze"] .reporting-entities{grid-template-columns:minmax(0,1fr);max-width:520px;}
+.reporting-summary[data-mode="analyze"]{grid-template-columns:minmax(0,520px);}
+@media(max-width:560px){.compare-mode-switch{display:grid;grid-template-columns:1fr 1fr}.compare-mode-btn{width:100%}.reporting-builder[data-mode="analyze"] .reporting-builder-grid{grid-template-columns:1fr}.reporting-summary[data-mode="analyze"]{grid-template-columns:1fr}}
 @media(max-width:560px){.reporting-builder{padding:12px}.reporting-builder-grid{grid-template-columns:1fr}.reporting-entities{grid-template-columns:1fr 1fr}.reporting-summary{grid-template-columns:1fr 1fr}.reporting-hero{padding:12px}.reporting-hero-value{font-size:21px}.reporting-chart-wrap{height:260px;max-height:260px}}
 </style>
 
@@ -385,7 +394,7 @@ body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',-app
   <div class="tab" onclick="showTab('brands')"><span class="tab-icon">📦</span>Portafolio</div>
   <div class="tab" onclick="showTab('customers')"><span class="tab-icon">📁</span>Clientes</div>
   <div class="tab" onclick="showTab('reps')"><span class="tab-icon">👥</span>Equipo de Ventas</div>
-  <div class="tab" onclick="showTab('reporting')"><span class="tab-icon">⚖️</span>Reporting</div>
+  <div class="tab" onclick="showTab('reporting')"><span class="tab-icon">⚖️</span>Compare</div>
   <div class="tab" onclick="showTab('voids')"><span class="tab-icon">🚫</span>Canceladas</div>
 </div>
 
@@ -929,34 +938,40 @@ th .info-tip::after{top:auto;bottom:100%;border-top-color:transparent;border-bot
 </div>
 </div>
 
-<!-- 7. Reporting -->
+<!-- 7. Compare -->
 <div id="tab-reporting" class="tab-panel">
 <div class="content">
-  <div class="section-header"><div><div class="section-title">Comparison Studio</div><div class="section-sub">Compara clientes, productos, marcas, representantes, cadenas o períodos lado a lado.</div></div></div>
-  <div class="reporting-builder">
+  <div class="section-header"><div><div class="section-title">Compare</div><div class="section-sub">Analiza una entidad en profundidad o compara hasta cuatro entidades y períodos lado a lado.</div></div></div>
+  <div class="reporting-builder" data-mode="analyze">
+    <div class="compare-mode-switch" role="group" aria-label="Modo de análisis">
+      <button type="button" id="compare-mode-analyze" class="reporting-btn compare-mode-btn active" onclick="setCompareMode('analyze')">🔎 Analyze <span class="info-icon">i<span class="info-tip">Muestra una sola entidad con sus métricas, composición y tendencia. Desde esta vista puedes añadir una segunda entidad para iniciar una comparación.</span></span></button>
+      <button type="button" id="compare-mode-compare" class="reporting-btn compare-mode-btn" onclick="setCompareMode('compare')">⚖️ Compare <span class="info-icon">i<span class="info-tip">Compara de dos a cuatro entidades equivalentes. Calcula diferencias contra una referencia y resalta fortalezas y brechas.</span></span></button>
+    </div>
     <div class="reporting-builder-grid">
-      <div class="reporting-field"><label>Tipo de comparación<span class="info-icon">i<span class="info-tip">Define qué clase de entidades se compararán. Solo se comparan entidades equivalentes para mantener métricas coherentes.</span></span></label><select id="report-type" class="filter-select" onchange="reportingTypeChanged()"><option value="customers">Clientes</option><option value="products">Productos / SKUs</option><option value="brands">Marcas</option><option value="reps">Representantes</option><option value="chains">Cadenas</option><option value="periods">Períodos</option></select></div>
-      <div class="reporting-field"><label>Métrica principal<span class="info-icon">i<span class="info-tip">Controla la métrica destacada y la gráfica de tendencia. La tabla siempre conserva las métricas esenciales de la categoría seleccionada.</span></span></label><select id="report-primary" class="filter-select" onchange="renderReporting()"><option value="sales">Ventas</option><option value="gp">Gross Profit</option><option value="cases">Cajas</option><option value="margin">Margen</option><option value="orders">Órdenes</option></select></div>
-      <div class="reporting-field"><label>Entidades visibles<span class="info-icon">i<span class="info-tip">En desktop puedes comparar hasta cuatro entidades. En móvil se presentan dos por fila para conservar legibilidad.</span></span></label><select id="report-count" class="filter-select" onchange="reportingCountChanged()"><option value="2">2 entidades</option><option value="3">3 entidades</option><option value="4">4 entidades</option></select></div>
-      <div class="reporting-field"><label>Referencia<span class="info-icon">i<span class="info-tip">La primera entidad funciona como base para calcular las diferencias mostradas debajo de cada resultado.</span></span></label><select id="report-reference" class="filter-select" onchange="renderReporting()"><option value="0">Entidad 1</option><option value="1">Entidad 2</option></select></div>
+      <div class="reporting-field"><label>Tipo de análisis<span class="info-icon">i<span class="info-tip">Define la clase de entidad. Clientes se comparan con clientes, productos con productos y así sucesivamente para mantener métricas coherentes.</span></span></label><select id="report-type" class="filter-select" onchange="reportingTypeChanged()"><option value="customers">Clientes</option><option value="products">Productos / SKUs</option><option value="brands">Marcas</option><option value="reps">Representantes</option><option value="chains">Cadenas</option><option value="periods">Períodos</option></select></div>
+      <div class="reporting-field"><label>Métrica principal<span class="info-icon">i<span class="info-tip">Controla el valor destacado y la gráfica de tendencia. La tabla conserva todas las métricas esenciales del tipo seleccionado.</span></span></label><select id="report-primary" class="filter-select" onchange="renderReporting()"><option value="sales">Ventas</option><option value="gp">Gross Profit</option><option value="cases">Cajas</option><option value="margin">Margen</option><option value="orders">Órdenes</option></select></div>
+      <div class="reporting-field compare-only"><label>Entidades visibles<span class="info-icon">i<span class="info-tip">Permite comparar de dos a cuatro entidades. En móvil las tarjetas se organizan en dos columnas y la tabla utiliza desplazamiento horizontal local.</span></span></label><select id="report-count" class="filter-select" onchange="reportingCountChanged()"><option value="2">2 entidades</option><option value="3">3 entidades</option><option value="4">4 entidades</option></select></div>
+      <div class="reporting-field compare-only"><label>Referencia<span class="info-icon">i<span class="info-tip">La entidad seleccionada como referencia funciona como base para calcular diferencias porcentuales o puntos porcentuales.</span></span></label><select id="report-reference" class="filter-select" onchange="renderReporting()"><option value="0">Entidad 1</option><option value="1">Entidad 2</option></select></div>
     </div>
     <div class="reporting-entities" id="reporting-entity-selectors"></div>
     <div class="reporting-actions">
-      <button type="button" class="reporting-btn primary" onclick="renderReporting()">Actualizar comparación</button>
-      <label class="reporting-toggle"><input type="checkbox" id="report-only-differences" onchange="renderReporting()"> Mostrar solo diferencias <span class="info-icon">i<span class="info-tip">Oculta filas en las que todos los valores son iguales o prácticamente iguales. La tolerancia es menor a 0.1% para porcentajes y menor a $1 o una unidad para valores absolutos.</span></span></label>
-      <label class="reporting-toggle"><input type="checkbox" id="report-highlight-best" checked onchange="renderReporting()"> Resaltar mejor resultado <span class="info-icon">i<span class="info-tip">Marca el valor más favorable por métrica. Para riesgo o pérdida, un valor menor sería preferible; en esta primera versión solo se usan métricas donde un valor mayor es generalmente favorable.</span></span></label>
+      <button type="button" class="reporting-btn primary" onclick="renderReporting()">Actualizar</button>
+      <button type="button" id="compare-add-btn" class="reporting-btn analyze-only" onclick="addComparisonEntity()">+ Comparar esta entidad <span class="info-icon">i<span class="info-tip">Conserva la entidad analizada y abre el modo Compare con una segunda selección.</span></span></button>
+      <button type="button" class="reporting-btn compare-only" onclick="analyzeReferenceEntity()">🔎 Analizar referencia <span class="info-icon">i<span class="info-tip">Regresa al modo Analyze usando como entidad principal la referencia actual.</span></span></button>
+      <label class="reporting-toggle compare-only"><input type="checkbox" id="report-only-differences" onchange="renderReporting()"> Mostrar solo diferencias <span class="info-icon">i<span class="info-tip">Oculta métricas cuyos valores son iguales o prácticamente iguales entre todas las entidades seleccionadas.</span></span></label>
+      <label class="reporting-toggle compare-only"><input type="checkbox" id="report-highlight-best" checked onchange="renderReporting()"> Resaltar mejor resultado <span class="info-icon">i<span class="info-tip">Marca el valor más favorable por métrica y señala discretamente el menor resultado para facilitar lectura rápida.</span></span></label>
     </div>
   </div>
 
   <div class="reporting-summary" id="reporting-summary"></div>
 
   <div class="section">
-    <div class="section-header"><div><div class="section-title">Comparación lado a lado</div><div class="section-sub">La primera selección funciona como referencia para las variaciones.</div></div></div>
+    <div class="section-header"><div><div class="section-title" id="compare-table-title">Análisis detallado</div><div class="section-sub" id="compare-table-sub">Métricas principales de la entidad seleccionada.</div></div></div>
     <div class="table-card reporting-table-wrap"><table class="data-table reporting-table" id="tbl-reporting"></table></div>
   </div>
 
   <div class="chart-grid" style="grid-template-columns:1fr">
-    <div class="chart-card"><div class="chart-title"><span class="accent-dot"></span>Tendencia comparativa<span class="info-icon">i<span class="info-tip">Evolución mensual de la métrica principal para cada entidad seleccionada. Permite distinguir diferencias estructurales de picos aislados.</span></span></div><div class="reporting-chart-wrap"><canvas id="ch-reporting-trend"></canvas></div></div>
+    <div class="chart-card"><div class="chart-title"><span class="accent-dot"></span><span id="compare-trend-title">Tendencia de la entidad</span><span class="info-icon">i<span class="info-tip">Evolución mensual de la métrica principal. En Compare muestra una línea por entidad; en Analyze permite evaluar consistencia, estacionalidad y cambios de dirección.</span></span></div><div class="reporting-chart-wrap"><canvas id="ch-reporting-trend"></canvas></div></div>
   </div>
 </div>
 </div>
@@ -2537,10 +2552,37 @@ function reportingOptions(type){
   const totals={};activeRows(FILTERED).forEach(r=>{const k=reportingEntityKey(type,r);if(k)totals[k]=(totals[k]||0)+r.amount;});
   return vals.sort((a,b)=>(totals[b]||0)-(totals[a]||0)).map(v=>({value:v,label:v}));
 }
+let COMPARE_MODE='analyze';
+function setCompareMode(mode,preserve=true){
+  COMPARE_MODE=mode==='compare'?'compare':'analyze';
+  const builder=document.querySelector('#tab-reporting .reporting-builder');
+  if(builder)builder.dataset.mode=COMPARE_MODE;
+  document.getElementById('compare-mode-analyze')?.classList.toggle('active',COMPARE_MODE==='analyze');
+  document.getElementById('compare-mode-compare')?.classList.toggle('active',COMPARE_MODE==='compare');
+  const count=document.getElementById('report-count');
+  if(COMPARE_MODE==='analyze'&&count)count.value='2';
+  populateReportingSelectors(preserve);
+  renderReporting();
+}
+function addComparisonEntity(){
+  const current=document.getElementById('report-entity-0')?.value;
+  setCompareMode('compare',false);
+  const first=document.getElementById('report-entity-0');
+  if(first&&current){first.value=current;}
+  renderReporting();
+}
+function analyzeReferenceEntity(){
+  const ref=Math.max(0,Number(document.getElementById('report-reference')?.value||0));
+  const current=document.getElementById(`report-entity-${ref}`)?.value;
+  setCompareMode('analyze',false);
+  const first=document.getElementById('report-entity-0');
+  if(first&&current){first.value=current;}
+  renderReporting();
+}
 function reportingTypeChanged(){populateReportingSelectors();renderReporting();}
 function reportingCountChanged(){populateReportingSelectors(true);renderReporting();}
 function populateReportingSelectors(preserve=false){
-  const type=document.getElementById('report-type')?.value||'customers',count=Number(document.getElementById('report-count')?.value||2),host=document.getElementById('reporting-entity-selectors');if(!host)return;
+  const type=document.getElementById('report-type')?.value||'customers',count=COMPARE_MODE==='analyze'?1:Number(document.getElementById('report-count')?.value||2),host=document.getElementById('reporting-entity-selectors');if(!host)return;
   const old=[...host.querySelectorAll('select')].map(x=>x.value),opts=reportingOptions(type);
   host.innerHTML=Array.from({length:count},(_,i)=>{const selected=preserve&&old[i]&&opts.some(o=>o.value===old[i])?old[i]:(opts[i]?.value||opts[0]?.value||'');return `<div class="reporting-entity-slot reporting-field"><label>${reportingTypeLabel(type)} ${i+1}${infoIcon(`Selección ${i+1}. La primera entidad se utiliza como referencia inicial para calcular diferencias.`)}</label><select id="report-entity-${i}" class="filter-select" onchange="renderReporting()">${opts.map(o=>`<option value="${String(o.value).replace(/"/g,'&quot;')}" ${o.value===selected?'selected':''}>${o.label}</option>`).join('')}</select></div>`;}).join('');
   const ref=document.getElementById('report-reference');if(ref){ref.innerHTML=Array.from({length:count},(_,i)=>`<option value="${i}">Entidad ${i+1}</option>`).join('');if(Number(ref.value)>=count)ref.value='0';}
@@ -2580,15 +2622,19 @@ function reportingComparable(v){return typeof v==='number'&&Number.isFinite(v);}
 function renderReporting(){
   const host=document.getElementById('reporting-summary');if(!host)return;
   if(!document.querySelector('#reporting-entity-selectors select'))populateReportingSelectors();
-  const type=document.getElementById('report-type')?.value||'customers',count=Number(document.getElementById('report-count')?.value||2),primary=document.getElementById('report-primary')?.value||'sales',refIndex=Math.min(Number(document.getElementById('report-reference')?.value||0),count-1),onlyDiff=document.getElementById('report-only-differences')?.checked,highlight=document.getElementById('report-highlight-best')?.checked;
+  const type=document.getElementById('report-type')?.value||'customers',count=COMPARE_MODE==='analyze'?1:Number(document.getElementById('report-count')?.value||2),primary=document.getElementById('report-primary')?.value||'sales',refIndex=COMPARE_MODE==='analyze'?0:Math.min(Number(document.getElementById('report-reference')?.value||0),count-1),onlyDiff=COMPARE_MODE==='compare'&&document.getElementById('report-only-differences')?.checked,highlight=COMPARE_MODE==='compare'&&document.getElementById('report-highlight-best')?.checked;
   const entities=Array.from({length:count},(_,i)=>document.getElementById(`report-entity-${i}`)?.value).filter(Boolean);
   if(!entities.length){host.innerHTML='<div class="reporting-empty">No hay entidades disponibles bajo los filtros actuales.</div>';document.getElementById('tbl-reporting').innerHTML='';destroyChart('ch-reporting-trend');return;}
   const data=entities.map((name,i)=>({name,label:document.getElementById(`report-entity-${i}`)?.selectedOptions[0]?.textContent||name,rows:reportingRowsForEntity(type,name),color:REPORT_ENTITY_COLORS[i],metrics:null}));data.forEach(x=>x.metrics=reportingAggregate(x.rows));
   const ref=data[refIndex]||data[0],primaryDef={sales:['Ventas','money'],gp:['Gross Profit','money'],cases:['Cajas','number'],margin:['Margen','pct'],orders:['Órdenes','number']}[primary]||['Ventas','money'];
-  host.innerHTML=data.map(x=>{const val=x.metrics[primary],rv=ref.metrics[primary],delta=reportingComparable(val)&&reportingComparable(rv)&&rv!==0?(val-rv)/Math.abs(rv)*100:null;return `<div class="reporting-hero" style="--entity-color:${x.color}"><div class="reporting-hero-name">${x.label}</div><div class="reporting-hero-period">${primaryDef[0]} · ${x===ref?'Referencia':'Comparado'}</div><div class="reporting-hero-value">${reportingFormat(val,primaryDef[1])}</div><div class="reporting-hero-sub">${x===ref?'Base de comparación':delta===null?'Sin base comparable':`${delta>=0?'+':''}${delta.toFixed(1)}% vs referencia`}</div></div>`;}).join('');
+  host.dataset.mode=COMPARE_MODE;host.innerHTML=data.map(x=>{const val=x.metrics[primary],rv=ref.metrics[primary],delta=reportingComparable(val)&&reportingComparable(rv)&&rv!==0?(val-rv)/Math.abs(rv)*100:null;return `<div class="reporting-hero" style="--entity-color:${x.color}"><div class="reporting-hero-name">${x.label}</div><div class="reporting-hero-period">${primaryDef[0]} · ${COMPARE_MODE==='analyze'?'Entidad analizada':x===ref?'Referencia':'Comparado'}</div><div class="reporting-hero-value">${reportingFormat(val,primaryDef[1])}</div><div class="reporting-hero-sub">${COMPARE_MODE==='analyze'?'Resultado para el período seleccionado':x===ref?'Base de comparación':delta===null?'Sin base comparable':`${delta>=0?'+':''}${delta.toFixed(1)}% vs referencia`}</div></div>`;}).join('');
   const defs=reportingMetricDefinitions(type);let body='',group='';
-  defs.forEach(def=>{const vals=data.map(x=>x.metrics[def.key]);const nums=vals.filter(reportingComparable);const allSame=nums.length===vals.length&&nums.length>1&&Math.max(...nums)-Math.min(...nums)<(def.format==='pct'?.1:1);if(onlyDiff&&allSame)return;if(def.group!==group){group=def.group;body+=`<tr class="reporting-group-row"><td colspan="${data.length+1}">${group}</td></tr>`;}const max=nums.length?Math.max(...nums):null,min=nums.length?Math.min(...nums):null;body+=`<tr><td class="metric-name">${def.label}${infoIcon(def.info)}</td>${data.map((x,i)=>{const v=vals[i],rv=vals[refIndex],best=highlight&&reportingComparable(v)&&max!==min&&v===max,worst=highlight&&reportingComparable(v)&&max!==min&&v===min;let delta='';if(i!==refIndex&&reportingComparable(v)&&reportingComparable(rv)){if(def.format==='pct')delta=`${v-rv>=0?'+':''}${(v-rv).toFixed(1)} pp`;else if(rv!==0)delta=`${(v-rv)/Math.abs(rv)*100>=0?'+':''}${((v-rv)/Math.abs(rv)*100).toFixed(1)}%`;}return `<td class="r ${best?'reporting-best':worst?'reporting-worst':''}">${reportingFormat(v,def.format)}${delta?`<span class="reporting-delta">${delta} vs ref.</span>`:''}</td>`;}).join('')}</tr>`;});
-  document.getElementById('tbl-reporting').innerHTML=`<thead><tr><th>Métrica</th>${data.map((x,i)=>`<th class="entity-head" style="color:${x.color}">${x.label}${i===refIndex?' · Ref.':''}</th>`).join('')}</tr></thead><tbody>${body}</tbody>`;
+  defs.forEach(def=>{const vals=data.map(x=>x.metrics[def.key]);const nums=vals.filter(reportingComparable);const allSame=nums.length===vals.length&&nums.length>1&&Math.max(...nums)-Math.min(...nums)<(def.format==='pct'?.1:1);if(onlyDiff&&allSame)return;if(def.group!==group){group=def.group;body+=`<tr class="reporting-group-row"><td colspan="${data.length+1}">${group}</td></tr>`;}const max=nums.length?Math.max(...nums):null,min=nums.length?Math.min(...nums):null;body+=`<tr><td class="metric-name">${def.label}${infoIcon(def.info)}</td>${data.map((x,i)=>{const v=vals[i],rv=vals[refIndex],best=highlight&&reportingComparable(v)&&max!==min&&v===max,worst=highlight&&reportingComparable(v)&&max!==min&&v===min;let delta='';if(COMPARE_MODE==='compare'&&i!==refIndex&&reportingComparable(v)&&reportingComparable(rv)){if(def.format==='pct')delta=`${v-rv>=0?'+':''}${(v-rv).toFixed(1)} pp`;else if(rv!==0)delta=`${(v-rv)/Math.abs(rv)*100>=0?'+':''}${((v-rv)/Math.abs(rv)*100).toFixed(1)}%`;}return `<td class="r ${best?'reporting-best':worst?'reporting-worst':''}">${reportingFormat(v,def.format)}${delta?`<span class="reporting-delta">${delta} vs ref.</span>`:''}</td>`;}).join('')}</tr>`;});
+  document.getElementById('tbl-reporting').innerHTML=`<thead><tr><th>Métrica</th>${data.map((x,i)=>`<th class="entity-head" style="color:${x.color}">${x.label}${COMPARE_MODE==='compare'&&i===refIndex?' · Ref.':''}</th>`).join('')}</tr></thead><tbody>${body}</tbody>`;
+  const tableTitle=document.getElementById('compare-table-title'),tableSub=document.getElementById('compare-table-sub'),trendTitle=document.getElementById('compare-trend-title');
+  if(tableTitle)tableTitle.textContent=COMPARE_MODE==='analyze'?'Análisis detallado':'Comparación lado a lado';
+  if(tableSub)tableSub.textContent=COMPARE_MODE==='analyze'?'Métricas principales de la entidad seleccionada.':'Las variaciones se calculan contra la entidad de referencia.';
+  if(trendTitle)trendTitle.textContent=COMPARE_MODE==='analyze'?'Tendencia de la entidad':'Tendencia comparativa';
   const months=activeMonths(ENRICHED),metricGetter={sales:r=>r.amount,gp:r=>r.gp,cases:r=>r.qty,margin:null,orders:null}[primary];
   const datasets=data.map(x=>{const monthly=months.map(m=>{const rr=x.rows.filter(r=>r.month===m);if(primary==='margin'){const a=reportingAggregate(rr);return a.margin;}if(primary==='orders')return new Set(rr.map(r=>r.invoice_number)).size;return rr.reduce((s,r)=>s+(metricGetter?metricGetter(r):0),0);});return {label:x.label,data:monthly,borderColor:x.color,backgroundColor:x.color+'22',tension:.3,fill:false,pointRadius:3,pointHoverRadius:6};});
   mkChart('ch-reporting-trend',{type:'line',data:{labels:months.map(m=>MN_SHORT[m]),datasets},options:{responsive:true,maintainAspectRatio:false,animation:false,resizeDelay:150,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom'},tooltip:primary==='sales'||primary==='gp'?TT_DOLLAR:{}},scales:{y:{beginAtZero:true,ticks:{callback:v=>primary==='sales'||primary==='gp'?'$'+Number(v).toLocaleString('en-US'):primary==='margin'?v+'%':Number(v).toLocaleString('en-US')}}}}});
