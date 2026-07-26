@@ -2225,7 +2225,7 @@ function renderVoids(){
 // TAB SWITCHING
 // ============================================================
 const TABS={overview:renderOverview,brands:renderBrands,reps:renderReps,customers:renderClients,monthly:renderMonthly,voids:renderVoids};
-const TAB_LIST=["overview","brands","reps","customers","monthly","voids"];
+const TAB_LIST=["overview","brands","customers","reps","monthly","voids"];
 let activeTab="overview";
 function showTab(name){
   document.querySelectorAll(".tab-panel").forEach(p=>p.classList.remove("active"));
