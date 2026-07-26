@@ -641,6 +641,42 @@ th .info-tip::after{top:auto;bottom:100%;border-top-color:transparent;border-bot
 @media(max-width:1200px){.portfolio-decision-grid{grid-template-columns:repeat(2,1fr);}}
 @media(max-width:650px){.portfolio-decision-grid{grid-template-columns:1fr;}}
 
+
+
+/* CUSTOMER INTELLIGENCE */
+.customer-intelligence-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin:22px 0 12px;}
+.customer-intelligence-head .section-sub{max-width:720px;line-height:1.5;}
+.customer-intelligence-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:18px;align-items:start;}
+.customer-intelligence-grid .portfolio-insight-card{height:154px;}
+.customer-analysis-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-bottom:18px;}
+.customer-analysis-grid .chart-card{min-width:0;overflow:visible;position:relative;}
+.customer-analysis-grid .chart-title{overflow:visible;position:relative;z-index:20;}
+.customer-analysis-grid .info-icon:hover{z-index:1000;}
+.customer-analysis-grid .info-tip{width:min(320px,calc(100vw - 50px));left:0;transform:none;}
+.customer-analysis-grid .info-tip::after{left:10px;transform:none;}
+.customer-mini-table{width:100%;border-collapse:collapse;font-size:11px;}
+.customer-mini-table th{color:var(--text3);font-size:9px;text-transform:uppercase;letter-spacing:.05em;text-align:left;padding:7px 6px;border-bottom:1px solid var(--border);}
+.customer-mini-table td{padding:8px 6px;border-bottom:1px solid rgba(255,255,255,.045);color:var(--text2);vertical-align:middle;}
+.customer-mini-table td strong{color:var(--text);}
+.customer-mini-table .r{text-align:right;}
+.customer-score-pill{display:inline-flex;min-width:34px;justify-content:center;padding:3px 7px;border-radius:10px;font-size:10px;font-weight:800;}
+.customer-segment-summary{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:10px;}
+.customer-segment-chip{padding:8px 9px;border:1px solid var(--border);border-radius:8px;background:rgba(255,255,255,.025);display:flex;justify-content:space-between;gap:8px;font-size:10px;color:var(--text2);}
+.customer-segment-chip strong{color:var(--text);}
+.customer-heatmap-wrap{overflow:auto;max-height:330px;}
+.customer-heatmap{width:100%;border-collapse:separate;border-spacing:4px;font-size:10px;}
+.customer-heatmap th{font-size:9px;color:var(--text3);font-weight:700;max-width:90px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;padding:4px;}
+.customer-heatmap th:first-child{text-align:left;position:sticky;left:0;background:var(--surface);z-index:2;}
+.customer-heatmap td{padding:7px 6px;border-radius:6px;text-align:center;font-weight:800;min-width:54px;}
+.customer-heatmap td:first-child{text-align:left;color:var(--text);font-weight:650;position:sticky;left:0;background:var(--surface);z-index:1;min-width:110px;}
+.customer-empty-state{min-height:250px;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;gap:8px;border:1px dashed var(--border-strong);border-radius:10px;color:var(--text3);padding:24px;}
+.customer-empty-state strong{font-size:14px;color:var(--text2);}
+.customer-empty-state span{max-width:430px;font-size:11px;line-height:1.5;}
+.customer-detail-note{font-size:9.5px;color:var(--text3);line-height:1.4;margin-top:8px;}
+@media(max-width:1200px){.customer-intelligence-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
+@media(max-width:900px){.customer-analysis-grid{grid-template-columns:1fr;}}
+@media(max-width:650px){.customer-intelligence-grid{grid-template-columns:1fr;}.customer-intelligence-head{align-items:flex-start;flex-direction:column;}}
+
 @media(max-width:900px){.chart-grid-2,.chart-grid-6040{grid-template-columns:1fr;}.content,.filter-bar,.header,.tabs-container{padding-left:16px;padding-right:16px;}}
 </style>
 
@@ -783,6 +819,34 @@ th .info-tip::after{top:auto;bottom:100%;border-top-color:transparent;border-bot
     </div>
   </div>
   <div class="kpi-grid" id="kpi-customers"></div>
+
+  <div class="customer-intelligence-head">
+    <div>
+      <div class="section-title">Customer Intelligence</div>
+      <div class="section-sub">Concentración, salud, amplitud de compra, riesgo y oportunidades de desarrollo bajo los filtros activos.</div>
+    </div>
+  </div>
+  <div class="customer-intelligence-grid" id="customer-intelligence-kpis"></div>
+  <div class="customer-analysis-grid" id="customer-intelligence-visuals">
+    <div class="chart-card">
+      <div class="chart-title"><span class="accent-dot"></span>Customer Segmentation Matrix<span class="info-icon">i<span class="info-tip">Clasifica clientes activos en cuatro cuadrantes usando las medianas del filtro actual. Fórmula: eje X = ventas por cliente; eje Y = margen bruto. Strategic = ventas y margen sobre la mediana; Volume = ventas altas y margen bajo; Growth = ventas bajas y margen alto; At Risk = ambos bajo la mediana. Sirve para priorizar defensa, rentabilidad y desarrollo.</span></span></div>
+      <canvas id="ch-customer-segments" height="245"></canvas>
+      <div id="customer-segment-summary" class="customer-segment-summary"></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title"><span class="accent-dot"></span>Customer Lifetime Value — Proxy<span class="info-icon">i<span class="info-tip">Ranking histórico orientativo, no un CLV financiero proyectado. Fórmula observada: ventas acumuladas, GP acumulado y meses activos por cliente, respetando los filtros excepto el período. Ayuda a identificar las relaciones que han generado más valor; no incorpora retención futura ni costo de servicio.</span></span></div>
+      <div id="customer-clv-proxy"></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title"><span class="accent-dot"></span>Portfolio Penetration Heatmap<span class="info-icon">i<span class="info-tip">Mide amplitud de marcas dentro de cada cadena bajo el filtro actual. Fórmula por celda: localidades activas de la cadena que compraron la marca ÷ localidades activas de esa cadena × 100. Es penetración sobre clientes activos observados, no sobre todo el universo de mercado.</span></span></div>
+      <div id="customer-penetration-heatmap" class="customer-heatmap-wrap"></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title"><span class="accent-dot"></span>Customer Opportunity Index<span class="info-icon">i<span class="info-tip">Score proxy de 0–100 para priorizar cross-selling sin inventar ventas potenciales. Fórmula: 45% tamaño relativo de la cuenta + 35% espacio de marcas no compradas + 20% espacio de SKUs frente al percentil 75. Un score alto indica una cuenta relevante con amplitud de portafolio todavía baja. No es un forecast monetario.</span></span></div>
+      <div id="customer-opportunity-index"></div>
+    </div>
+  </div>
+
   <div class="chart-grid chart-grid-2">
     <div class="chart-card"><div class="chart-title"><span class="accent-dot"></span><span id="cht-cat-title">Ventas por Canal ($)</span></div><canvas id="ch-cat-bar" height="280"></canvas></div>
     <div class="chart-card"><div class="chart-title"><span class="accent-dot"></span><span id="cht-chain-title">Top Cadenas por Ventas ($)</span></div><canvas id="ch-chain-bar" height="280"></canvas></div>
@@ -1450,6 +1514,7 @@ function toggleChainRows(idx){
 
 const charts={};
 function mkChart(id,cfg){if(charts[id])charts[id].destroy();const c=document.getElementById(id);if(!c)return;charts[id]=new Chart(c,cfg);}
+function destroyChart(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
 // Tooltip config con $ formateado (para charts de revenue)
 const TT_DOLLAR = {
   callbacks:{
@@ -2033,6 +2098,123 @@ function renderReps(){
   document.getElementById("tbl-rep").innerHTML=`<thead><tr><th>#</th><th>Representante</th><th class="r">Ventas $</th><th class="r">% Mix</th><th class="r">Cajas</th><th class="r">Órdenes</th><th class="r">Clientes</th><th class="r">GP $</th><th class="r">Margen${infoIcon("GP ÷ Ventas de las cuentas de este rep × 100. Verde ≥30% · Amarillo 20-30% · Rojo <20%.")}</th></tr></thead><tbody>${rows}</tbody>`;
 }
 
+
+
+function customerComparablePreviousMonths(){
+  if(!Array.isArray(selectedMonths)||!selectedMonths.length)return null;
+  const sorted=[...selectedMonths].sort((a,b)=>a-b), span=sorted.length, start=sorted[0]-span;
+  if(start<1)return null;
+  const prev=Array.from({length:span},(_,i)=>start+i);
+  return prev.every(m=>availableMonths.includes(m))?prev:null;
+}
+function median(values){
+  const a=values.filter(Number.isFinite).sort((x,y)=>x-y);if(!a.length)return 0;
+  const mid=Math.floor(a.length/2);return a.length%2?a[mid]:(a[mid-1]+a[mid])/2;
+}
+function percentileRank(value,values){
+  const a=values.filter(Number.isFinite).sort((x,y)=>x-y);if(a.length<=1)return a.length?1:0;
+  let below=0;for(const x of a)if(x<=value)below++;return Math.max(0,Math.min(1,(below-1)/(a.length-1)));
+}
+function customerAllHistoryRows(){
+  const f=otherFilterValues();
+  return activeRows(ENRICHED.filter(x=>
+    (f.co==="all"||x.company===f.co)&&(f.r==="all"||x.sales_rep===f.r)&&(f.ch==="all"||x.chain===f.ch)&&
+    (f.cfChan==="all"||x.department===f.cfChan)&&(f.cfCat==="all"||x.channel===f.cfCat)&&
+    (f.cfBrand==="all"||x.brand===f.cfBrand)&&(f.cfSku==="all"||x.sku===f.cfSku)&&(f.cfStatus==="all"||x.status===f.cfStatus)
+  ));
+}
+function customerDetailedAgg(rows){
+  const m={};
+  activeRows(rows).forEach(r=>{
+    const k=r.customer_name;if(!k)return;
+    if(!m[k])m[k]={sales:0,gp:0,cases:0,orders:new Set(),skus:new Set(),brands:new Set(),months:new Set(),chain:r.chain,channel:r.channel};
+    const v=m[k];v.sales+=r.amount;v.gp+=r.gp;v.cases+=r.qty;v.orders.add(r.invoice_number);v.skus.add(r.sku);v.brands.add(r.brand);v.months.add(r.month);
+  });
+  Object.values(m).forEach(v=>{v.orders=v.orders.size;v.skuCount=v.skus.size;v.brandCount=v.brands.size;v.monthCount=v.months.size;v.margin=v.sales?v.gp/v.sales*100:0;});
+  return m;
+}
+function customerInsightCard(color,label,value,sub,details="",info="",soon=false){
+  const expandIcon='<svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>';
+  return `<div class="portfolio-insight-card${soon?' portfolio-coming-soon':''}" style="--insight-color:${color}"><div class="portfolio-insight-label"><span>${label}</span>${info?infoIcon(info):''}<span class="portfolio-status${soon?' soon':''}">${soon?'Coming Soon':'Disponible'}</span>${details&&!soon?`<button type="button" class="portfolio-expand-btn" aria-label="Mostrar detalles de ${label}" aria-expanded="false" onclick="togglePortfolioCard(this)">${expandIcon}</button>`:''}</div><div class="portfolio-insight-value">${soon?'N/A':value}</div><div class="portfolio-insight-sub">${sub}</div>${details&&!soon?`<div class="portfolio-insight-details">${details}</div>`:''}</div>`;
+}
+function customerScoreTone(score){return score>=70?'#10b981':score>=45?'#F4C124':'#ef4444';}
+function renderCustomerIntelligence(d){
+  const host=document.getElementById('customer-intelligence-kpis');if(!host)return;
+  const currentRows=activeRows(d), cur=customerDetailedAgg(currentRows);
+  const names=Object.keys(cur).filter(k=>cur[k].sales>0).sort((a,b)=>cur[b].sales-cur[a].sales);
+  const totalSales=names.reduce((s,k)=>s+cur[k].sales,0);
+  const catalogCustomerCount=Object.keys(CUSTOMERS).length;
+  if(!names.length||totalSales<=0){
+    host.innerHTML=Array.from({length:6},(_,i)=>customerInsightCard('#64748b',['Customer Concentration','Customer Pareto','Wallet Distribution','Customer Quality Score','New vs Lost Customers','Revenue at Risk'][i],'','Sin ventas activas bajo los filtros actuales','','No hay data suficiente para calcular esta métrica.',true)).join('');
+    ['customer-clv-proxy','customer-penetration-heatmap','customer-opportunity-index','customer-segment-summary'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML='<div class="customer-empty-state"><strong>Coming Soon</strong><span>Se necesita data de ventas activa bajo los filtros seleccionados.</span></div>';});
+    destroyChart('ch-customer-segments');return;
+  }
+
+  const top10=names.slice(0,10), top10Sales=top10.reduce((s,k)=>s+cur[k].sales,0), concentration=top10Sales/totalSales*100;
+  let cumulative=0,paretoCount=0;for(const k of names){cumulative+=cur[k].sales;paretoCount++;if(cumulative/totalSales>=.8)break;}
+  const avgSkus=names.reduce((s,k)=>s+cur[k].skuCount,0)/names.length;
+  const walletBuckets={'1 SKU':0,'2–3 SKUs':0,'4–6 SKUs':0,'7+ SKUs':0};
+  names.forEach(k=>{const n=cur[k].skuCount;walletBuckets[n<=1?'1 SKU':n<=3?'2–3 SKUs':n<=6?'4–6 SKUs':'7+ SKUs']++;});
+
+  const salesVals=names.map(k=>cur[k].sales), skuVals=names.map(k=>cur[k].skuCount), orderVals=names.map(k=>cur[k].orders);
+  names.forEach(k=>{const v=cur[k];const salesScore=percentileRank(v.sales,salesVals)*100;const marginScore=Math.max(0,Math.min(100,v.margin/40*100));const breadthScore=percentileRank(v.skuCount,skuVals)*100;const frequencyScore=percentileRank(v.orders,orderVals)*100;v.qualityScore=Math.round(.30*salesScore+.25*marginScore+.25*breadthScore+.20*frequencyScore);});
+  const qualityAvg=Math.round(names.reduce((s,k)=>s+cur[k].qualityScore,0)/names.length);
+
+  const prevMonths=customerComparablePreviousMonths();
+  let newCount=null,lostCount=null,netCount=null,riskSales=null,riskNames=[];
+  if(prevMonths){
+    const prevRows=rowsForMonths(prevMonths), prev=customerDetailedAgg(prevRows), prevNames=Object.keys(prev).filter(k=>prev[k].sales>0), currentSet=new Set(names), prevSet=new Set(prevNames);
+    lostCount=prevNames.filter(k=>!currentSet.has(k)).length;
+    riskNames=prevNames.filter(k=>!currentSet.has(k)).sort((a,b)=>prev[b].sales-prev[a].sales);
+    riskSales=riskNames.reduce((s,k)=>s+prev[k].sales,0);
+    const firstMap=customerFirstMonthMap();newCount=names.filter(k=>Array.isArray(selectedMonths)&&selectedMonths.includes(firstMap[k])).length;
+    netCount=newCount-lostCount;
+  }
+
+  const topDetails='<div class="portfolio-chip-section"><div class="portfolio-chip-title">Top 10 clientes</div><div class="portfolio-chip-list">'+top10.map(k=>`<span class="portfolio-chip"><span class="portfolio-chip-name">${k}</span><strong>${P(cur[k].sales/totalSales*100)}</strong></span>`).join('')+'</div></div>';
+  const paretoDetails='<div class="portfolio-chip-section"><div class="portfolio-chip-title">Clientes que forman el 80%</div><div class="portfolio-chip-list">'+names.slice(0,paretoCount).map(k=>`<span class="portfolio-chip"><span class="portfolio-chip-name">${k}</span><strong>${P(cur[k].sales/totalSales*100)}</strong></span>`).join('')+'</div></div>';
+  const walletDetails=Object.entries(walletBuckets).map(([k,v])=>`<div class="portfolio-mini-row"><span>${k}</span><strong>${v} clientes</strong></div>`).join('');
+  const qualityDetails=names.slice().sort((a,b)=>cur[b].qualityScore-cur[a].qualityScore).slice(0,10).map(k=>`<div class="portfolio-mini-row"><span>${k}</span><strong style="color:${customerScoreTone(cur[k].qualityScore)}">${cur[k].qualityScore}/100</strong></div>`).join('');
+  const changeDetails=prevMonths?`<div class="portfolio-mini-row"><span>Nuevos</span><strong style="color:#10b981">+${newCount}</strong></div><div class="portfolio-mini-row"><span>Perdidos vs período anterior</span><strong style="color:#ef4444">-${lostCount}</strong></div><div class="portfolio-mini-row"><span>Cambio neto</span><strong>${netCount>=0?'+':''}${netCount}</strong></div>`:'';
+  const riskDetails=prevMonths?riskNames.slice(0,10).map(k=>`<div class="portfolio-mini-row"><span>${k}</span><strong>${$(customerDetailedAgg(rowsForMonths(prevMonths))[k]?.sales||0)}</strong></div>`).join(''):'';
+
+  host.innerHTML=
+    customerInsightCard('#ec4899','Customer Concentration',P(concentration),`Top 10 de ${names.length} clientes activos`,topDetails,'Mide dependencia de los principales clientes. Fórmula: ventas de los 10 clientes más grandes ÷ ventas totales × 100. Un porcentaje alto implica mayor riesgo de concentración y mayor necesidad de proteger esas cuentas.')+
+    customerInsightCard('#6366f1','Customer Pareto',`${paretoCount} clientes`,`generan 80% de ventas · ${names.length} activos (${catalogCustomerCount} en cartera)`,paretoDetails,'Mide cuántos clientes activos bajo el filtro se necesitan para acumular 80% de las ventas. Fórmula: suma acumulada de ventas por cliente ÷ ventas totales. El denominador usa clientes con ventas activas porque los clientes sin ventas no contribuyen al resultado observado; la cartera total se muestra aparte.')+
+    customerInsightCard('#34A852','Wallet Distribution',avgSkus.toFixed(1)+' SKUs','promedio por cliente activo',walletDetails,'Mide amplitud de compra. Fórmula: suma de SKUs únicos comprados por cada cliente ÷ clientes activos. Cuanto mayor sea, más profundo es el cross-selling; una base concentrada en 1 SKU tiene mayor oportunidad y riesgo.')+
+    customerInsightCard(customerScoreTone(qualityAvg),'Customer Quality Score',qualityAvg+'/100',qualityAvg>=70?'Healthy portfolio':qualityAvg>=45?'Needs development':'Needs attention',qualityDetails,'Score proxy de salud de 0–100. Fórmula por cliente: 30% percentil de ventas + 25% margen normalizado + 25% amplitud de SKUs + 20% frecuencia de órdenes. El card muestra el promedio simple de clientes activos. Es una herramienta de priorización, no una calificación crediticia.')+
+    (prevMonths?customerInsightCard(netCount>=0?'#10b981':'#ef4444','New vs Lost Customers',(netCount>=0?'+':'')+netCount,`+${newCount} nuevos · −${lostCount} perdidos`,changeDetails,'Compara la base activa con un período anterior de igual duración. Nuevos = primera compra histórica dentro del período actual. Perdidos = compraron en el período anterior comparable y no en el actual. Cambio neto = nuevos − perdidos.'):customerInsightCard('#64748b','New vs Lost Customers','','Selecciona meses con un período anterior comparable','','Requiere un período anterior de igual duración disponible en la data. Por ejemplo, Q2 puede compararse con Q1; Todo el año no tiene un bloque anterior dentro del dataset actual.',true))+
+    (prevMonths?customerInsightCard('#F4C124','Revenue at Risk',$(riskSales),`${riskNames.length} clientes sin recompra vs período anterior`,riskDetails,'Mide ventas del período anterior asociadas a clientes que no compraron en el período actual comparable. Fórmula: suma de ventas previas de clientes activos antes y ausentes ahora. Es revenue histórico expuesto, no una pérdida confirmada ni un forecast.'):customerInsightCard('#64748b','Revenue at Risk','','Sin período anterior comparable','','Requiere meses anteriores comparables para identificar clientes que compraron antes y dejaron de comprar en el período actual.',true));
+
+  // Segmentation matrix
+  const salesMed=median(salesVals), marginMed=median(names.map(k=>cur[k].margin));
+  const segments={Strategic:[],Volume:[],Growth:[],"At Risk":[]};
+  names.forEach(k=>{const v=cur[k];const seg=v.sales>=salesMed?(v.margin>=marginMed?'Strategic':'Volume'):(v.margin>=marginMed?'Growth':'At Risk');segments[seg].push(k);});
+  const segColors={Strategic:'#10b981',Volume:'#F4C124',Growth:'#6366f1','At Risk':'#ef4444'};
+  mkChart('ch-customer-segments',{type:'scatter',data:{datasets:Object.entries(segments).map(([seg,ks])=>({label:seg,data:ks.map(k=>({x:cur[k].sales,y:cur[k].margin,customer:k})),backgroundColor:segColors[seg],pointRadius:5,pointHoverRadius:7}))},options:{responsive:true,maintainAspectRatio:false,scales:{x:{type:'linear',grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#94a3b8',callback:v=>'$'+Number(v).toLocaleString('en-US',{notation:'compact'})},title:{display:true,text:'Ventas por cliente',color:'#94a3b8'}},y:{grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#94a3b8',callback:v=>v+'%'},title:{display:true,text:'Margen %',color:'#94a3b8'}}},plugins:{legend:{labels:{color:'#cbd5e1',boxWidth:10}},tooltip:{callbacks:{label:ctx=>`${ctx.raw.customer}: ${$(ctx.raw.x)} · ${P(ctx.raw.y)}`}}}}});
+  document.getElementById('customer-segment-summary').innerHTML=Object.entries(segments).map(([seg,ks])=>`<div class="customer-segment-chip"><span>${seg}</span><strong style="color:${segColors[seg]}">${ks.length}</strong></div>`).join('');
+
+  // CLV proxy
+  const hist=customerDetailedAgg(customerAllHistoryRows()), histNames=Object.keys(hist).filter(k=>hist[k].sales>0).sort((a,b)=>hist[b].gp-hist[a].gp).slice(0,10);
+  document.getElementById('customer-clv-proxy').innerHTML=histNames.length?`<table class="customer-mini-table"><thead><tr><th>Cliente</th><th class="r">Ventas</th><th class="r">GP</th><th class="r">Meses</th></tr></thead><tbody>${histNames.map((k,i)=>`<tr><td><strong>${i+1}. ${k}</strong></td><td class="r">${$(hist[k].sales)}</td><td class="r">${$(hist[k].gp)}</td><td class="r">${hist[k].monthCount}</td></tr>`).join('')}</tbody></table><div class="customer-detail-note">Ranking por GP acumulado observado.</div>`:'<div class="customer-empty-state"><strong>Coming Soon</strong><span>No hay historial suficiente para construir el proxy.</span></div>';
+
+  // Heatmap
+  const chainAgg=agg(currentRows,r=>r.chain), chains=Object.keys(chainAgg).sort((a,b)=>chainAgg[b].sales-chainAgg[a].sales).slice(0,8);
+  const brandAgg=agg(currentRows,r=>r.brand), brands=Object.keys(brandAgg).sort((a,b)=>brandAgg[b].sales-brandAgg[a].sales).slice(0,6);
+  if(chains.length&&brands.length){
+    const rowsHtml=chains.map(chain=>{const chainCustomers=new Set(currentRows.filter(r=>r.chain===chain).map(r=>r.customer_name));return `<tr><td>${chain}</td>${brands.map(brand=>{const buyers=new Set(currentRows.filter(r=>r.chain===chain&&r.brand===brand).map(r=>r.customer_name));const pct=chainCustomers.size?buyers.size/chainCustomers.size*100:0;const alpha=.08+.55*(pct/100);return `<td style="background:rgba(52,168,82,${alpha.toFixed(2)});color:${pct>=60?'#d1fae5':'#cbd5e1'}">${P(pct)}</td>`;}).join('')}</tr>`;}).join('');
+    document.getElementById('customer-penetration-heatmap').innerHTML=`<table class="customer-heatmap"><thead><tr><th>Cadena</th>${brands.map(b=>`<th title="${b}">${b}</th>`).join('')}</tr></thead><tbody>${rowsHtml}</tbody></table>`;
+  }else document.getElementById('customer-penetration-heatmap').innerHTML='<div class="customer-empty-state"><strong>Coming Soon</strong><span>Se necesitan cadenas y marcas con ventas activas.</span></div>';
+
+  // Opportunity index
+  const activeBrands=[...new Set(currentRows.map(r=>r.brand).filter(x=>x&&x!=='Unknown'))], p75Skus=skuVals.slice().sort((a,b)=>a-b)[Math.floor((skuVals.length-1)*.75)]||1;
+  if(activeBrands.length>=2){
+    names.forEach(k=>{const v=cur[k];const size=percentileRank(v.sales,salesVals);const brandWhitespace=1-v.brandCount/activeBrands.length;const skuWhitespace=Math.max(0,1-v.skuCount/Math.max(p75Skus,1));v.opportunityScore=Math.round(100*(.45*size+.35*brandWhitespace+.20*skuWhitespace));});
+    const opp=names.slice().sort((a,b)=>cur[b].opportunityScore-cur[a].opportunityScore).slice(0,10);
+    document.getElementById('customer-opportunity-index').innerHTML=`<table class="customer-mini-table"><thead><tr><th>Cliente</th><th class="r">Score</th><th class="r">Marcas</th><th class="r">SKUs</th></tr></thead><tbody>${opp.map((k,i)=>`<tr><td><strong>${i+1}. ${k}</strong></td><td class="r"><span class="customer-score-pill" style="background:${customerScoreTone(cur[k].opportunityScore)}22;color:${customerScoreTone(cur[k].opportunityScore)}">${cur[k].opportunityScore}</span></td><td class="r">${cur[k].brandCount}/${activeBrands.length}</td><td class="r">${cur[k].skuCount}</td></tr>`).join('')}</tbody></table><div class="customer-detail-note">Prioriza cross-selling; no estima dólares incrementales.</div>`;
+  }else document.getElementById('customer-opportunity-index').innerHTML='<div class="customer-empty-state"><strong>Coming Soon</strong><span>Se necesitan al menos dos marcas activas para medir espacio de portafolio.</span></div>';
+}
+
 function renderClients(){
   const activityFilter = document.getElementById("cf-activity")?.value || "all";
   document.getElementById("cht-cat-title").textContent = activityFilter==="all" ? "Ventas por Canal ($)" : "Perdidos por Canal";
@@ -2063,6 +2245,8 @@ function renderClients(){
     <div class="kpi" style="--kpi-color:#F4C124"><div class="kpi-label">Clientes Activos</div><div class="kpi-value">${custK.length}</div></div>
     <div class="kpi" style="--kpi-color:#ec4899"><div class="kpi-label">Ventas Totales</div><div class="kpi-value">${$(ts)}</div></div>
     <div class="kpi" style="--kpi-color:#10b981"><div class="kpi-label">Margen % Promedio${infoIcon("Ganancia bruta total ÷ ventas totales del canal/cadena/cliente filtrado, ponderado por venta (no es el promedio simple de los % individuales).")}</div><div class="kpi-value">${P(avgMargin)}</div></div>`;
+
+  renderCustomerIntelligence(d);
 
   mkChart("ch-cat-bar",{type:"bar",data:{labels:cK,datasets:[{label:"Ventas $",data:cK.map(k=>cA[k].sales),backgroundColor:cK.map(k=>CHANNEL_COLORS[k]||"#64748b"),borderRadius:5}]},options:{...xDollar(),indexAxis:"y",responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`Ventas: ${$(ctx.parsed.x)}`}}}}});
 
@@ -2111,6 +2295,11 @@ function renderClients(){
 
 // Vista de Clientes Perdidos: filtro real de Actividad (30/60/90 días sin comprar) sobre el master de customers
 function renderLostCustomersView(thresholdDays){
+  const intel=document.getElementById('customer-intelligence-kpis');
+  if(intel) intel.innerHTML=customerInsightCard('#64748b','Customer Intelligence','','Disponible en la vista Actividad: Todos','','Las métricas estratégicas requieren la base completa de clientes activos. Cambia Actividad a Todos para ver concentración, Pareto, wallet, segmentación, riesgo y oportunidades.',true);
+  destroyChart('ch-customer-segments');
+  const seg=document.getElementById('customer-segment-summary');if(seg)seg.innerHTML='';
+  ['customer-clv-proxy','customer-penetration-heatmap','customer-opportunity-index'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML='<div class="customer-empty-state"><strong>Coming Soon</strong><span>Disponible en Actividad: Todos.</span></div>';});
   const {map:lastPurchase, maxDate} = customerLastPurchaseMap();
   const f = otherFilterValues();
   const chainFilter = document.getElementById("f-chain")?.value || "all";
