@@ -346,6 +346,37 @@ body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',-app
   font-size:12px;
   padding:7px 30px 7px 12px;
 }
+
+/* REPORTING COMPARISON STUDIO */
+.reporting-builder{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:18px;}
+.reporting-builder-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;align-items:end;}
+.reporting-field label{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;font-weight:700;margin-bottom:6px;}
+.reporting-field select{width:100%;min-width:0;}
+.reporting-entities{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:12px;}
+.reporting-entity-slot{min-width:0;}
+.reporting-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px;}
+.reporting-toggle{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);cursor:pointer;}
+.reporting-toggle input{accent-color:var(--accent);}
+.reporting-btn{border:1px solid var(--border-strong);background:var(--surface2);color:var(--text);padding:8px 12px;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;}
+.reporting-btn.primary{background:var(--accent);color:#07120a;border-color:var(--accent);}
+.reporting-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px;}
+.reporting-hero{background:var(--surface);border:1px solid var(--border);border-top:3px solid var(--entity-color,var(--accent));border-radius:12px;padding:15px;min-width:0;}
+.reporting-hero-name{font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.reporting-hero-period{font-size:10px;color:var(--text3);margin-top:3px;}
+.reporting-hero-value{font-size:25px;font-weight:800;color:var(--text);margin-top:12px;}
+.reporting-hero-sub{font-size:11px;color:var(--text2);margin-top:5px;}
+.reporting-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.reporting-table{min-width:720px;}
+.reporting-table th.entity-head{text-align:right;min-width:145px;max-width:210px;}
+.reporting-table td.metric-name{font-weight:700;color:var(--text);position:sticky;left:0;background:var(--surface);z-index:1;min-width:175px;}
+.reporting-group-row td{background:var(--surface2);color:var(--accent);font-size:10px;text-transform:uppercase;letter-spacing:.08em;font-weight:800;}
+.reporting-best{color:#10b981;font-weight:800;}
+.reporting-worst{color:#ef4444;}
+.reporting-delta{font-size:10px;display:block;margin-top:2px;color:var(--text3);}
+.reporting-chart-wrap{height:320px;max-height:320px;position:relative;}
+.reporting-empty{padding:34px 18px;text-align:center;color:var(--text3);border:1px dashed var(--border-strong);border-radius:12px;}
+@media(max-width:900px){.reporting-builder-grid{grid-template-columns:repeat(2,minmax(0,1fr));}.reporting-entities,.reporting-summary{grid-template-columns:repeat(2,minmax(0,1fr));}}
+@media(max-width:560px){.reporting-builder{padding:12px}.reporting-builder-grid{grid-template-columns:1fr}.reporting-entities{grid-template-columns:1fr 1fr}.reporting-summary{grid-template-columns:1fr 1fr}.reporting-hero{padding:12px}.reporting-hero-value{font-size:21px}.reporting-chart-wrap{height:260px;max-height:260px}}
 </style>
 
 <!-- Tabs -->
@@ -354,7 +385,7 @@ body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',-app
   <div class="tab" onclick="showTab('brands')"><span class="tab-icon">📦</span>Portafolio</div>
   <div class="tab" onclick="showTab('customers')"><span class="tab-icon">📁</span>Clientes</div>
   <div class="tab" onclick="showTab('reps')"><span class="tab-icon">👥</span>Equipo de Ventas</div>
-  <div class="tab" onclick="showTab('monthly')"><span class="tab-icon">📅</span>Mensual</div>
+  <div class="tab" onclick="showTab('reporting')"><span class="tab-icon">⚖️</span>Reporting</div>
   <div class="tab" onclick="showTab('voids')"><span class="tab-icon">🚫</span>Canceladas</div>
 </div>
 
@@ -894,6 +925,38 @@ th .info-tip::after{top:auto;bottom:100%;border-top-color:transparent;border-bot
   <div class="section">
     <div class="section-header"><div class="section-title" id="tbl-customer-title">Canal → Cadena → Cliente</div><div class="section-sub" id="tbl-customer-sub">Click en una cadena para ver sus clientes individuales</div></div>
     <div class="table-card"><table class="data-table" id="tbl-customer"></table></div>
+  </div>
+</div>
+</div>
+
+<!-- 7. Reporting -->
+<div id="tab-reporting" class="tab-panel">
+<div class="content">
+  <div class="section-header"><div><div class="section-title">Comparison Studio</div><div class="section-sub">Compara clientes, productos, marcas, representantes, cadenas o períodos lado a lado.</div></div></div>
+  <div class="reporting-builder">
+    <div class="reporting-builder-grid">
+      <div class="reporting-field"><label>Tipo de comparación<span class="info-icon">i<span class="info-tip">Define qué clase de entidades se compararán. Solo se comparan entidades equivalentes para mantener métricas coherentes.</span></span></label><select id="report-type" class="filter-select" onchange="reportingTypeChanged()"><option value="customers">Clientes</option><option value="products">Productos / SKUs</option><option value="brands">Marcas</option><option value="reps">Representantes</option><option value="chains">Cadenas</option><option value="periods">Períodos</option></select></div>
+      <div class="reporting-field"><label>Métrica principal<span class="info-icon">i<span class="info-tip">Controla la métrica destacada y la gráfica de tendencia. La tabla siempre conserva las métricas esenciales de la categoría seleccionada.</span></span></label><select id="report-primary" class="filter-select" onchange="renderReporting()"><option value="sales">Ventas</option><option value="gp">Gross Profit</option><option value="cases">Cajas</option><option value="margin">Margen</option><option value="orders">Órdenes</option></select></div>
+      <div class="reporting-field"><label>Entidades visibles<span class="info-icon">i<span class="info-tip">En desktop puedes comparar hasta cuatro entidades. En móvil se presentan dos por fila para conservar legibilidad.</span></span></label><select id="report-count" class="filter-select" onchange="reportingCountChanged()"><option value="2">2 entidades</option><option value="3">3 entidades</option><option value="4">4 entidades</option></select></div>
+      <div class="reporting-field"><label>Referencia<span class="info-icon">i<span class="info-tip">La primera entidad funciona como base para calcular las diferencias mostradas debajo de cada resultado.</span></span></label><select id="report-reference" class="filter-select" onchange="renderReporting()"><option value="0">Entidad 1</option><option value="1">Entidad 2</option></select></div>
+    </div>
+    <div class="reporting-entities" id="reporting-entity-selectors"></div>
+    <div class="reporting-actions">
+      <button type="button" class="reporting-btn primary" onclick="renderReporting()">Actualizar comparación</button>
+      <label class="reporting-toggle"><input type="checkbox" id="report-only-differences" onchange="renderReporting()"> Mostrar solo diferencias <span class="info-icon">i<span class="info-tip">Oculta filas en las que todos los valores son iguales o prácticamente iguales. La tolerancia es menor a 0.1% para porcentajes y menor a $1 o una unidad para valores absolutos.</span></span></label>
+      <label class="reporting-toggle"><input type="checkbox" id="report-highlight-best" checked onchange="renderReporting()"> Resaltar mejor resultado <span class="info-icon">i<span class="info-tip">Marca el valor más favorable por métrica. Para riesgo o pérdida, un valor menor sería preferible; en esta primera versión solo se usan métricas donde un valor mayor es generalmente favorable.</span></span></label>
+    </div>
+  </div>
+
+  <div class="reporting-summary" id="reporting-summary"></div>
+
+  <div class="section">
+    <div class="section-header"><div><div class="section-title">Comparación lado a lado</div><div class="section-sub">La primera selección funciona como referencia para las variaciones.</div></div></div>
+    <div class="table-card reporting-table-wrap"><table class="data-table reporting-table" id="tbl-reporting"></table></div>
+  </div>
+
+  <div class="chart-grid" style="grid-template-columns:1fr">
+    <div class="chart-card"><div class="chart-title"><span class="accent-dot"></span>Tendencia comparativa<span class="info-icon">i<span class="info-tip">Evolución mensual de la métrica principal para cada entidad seleccionada. Permite distinguir diferencias estructurales de picos aislados.</span></span></div><div class="reporting-chart-wrap"><canvas id="ch-reporting-trend"></canvas></div></div>
   </div>
 </div>
 </div>
@@ -2459,6 +2522,78 @@ function renderLostCustomersView(thresholdDays){
   document.getElementById("tbl-customer").innerHTML=`<thead><tr><th>Cliente</th><th>Cadena</th><th>Canal</th><th>Departamento</th><th class="r">Última Compra</th><th class="r">Días Inactivo${infoIcon("Días transcurridos entre la última compra de este cliente y la fecha más reciente registrada en toda la data.")}</th><th>Rep</th><th>Status</th></tr></thead><tbody>${rows}</tbody>`;
 }
 
+const REPORT_ENTITY_COLORS=["#34A852","#6366f1","#F4C124","#ec4899"];
+function reportingEntityKey(type,r){
+  return type==='customers'?r.customer_name:type==='products'?r.sku:type==='brands'?r.brand:type==='reps'?r.sales_rep:type==='chains'?r.chain:null;
+}
+function reportingTypeLabel(type){return {customers:'Cliente',products:'Producto / SKU',brands:'Marca',reps:'Representante',chains:'Cadena',periods:'Período'}[type]||'Entidad';}
+function reportingPeriodRows(which){
+  if(which==='current')return activeRows(FILTERED);
+  const pm=customerComparablePreviousMonths();return pm?rowsForMonths(pm):[];
+}
+function reportingOptions(type){
+  if(type==='periods'){const pm=customerComparablePreviousMonths();return [{value:'current',label:'Período actual'},{value:'previous',label:pm?`Período anterior (${pm.map(m=>MN_SHORT[m]).join(', ')})`:'Período anterior no disponible'}];}
+  const vals=[...new Set(activeRows(FILTERED).map(r=>reportingEntityKey(type,r)).filter(v=>v&&v!=='Unknown'&&v!=='—'))];
+  const totals={};activeRows(FILTERED).forEach(r=>{const k=reportingEntityKey(type,r);if(k)totals[k]=(totals[k]||0)+r.amount;});
+  return vals.sort((a,b)=>(totals[b]||0)-(totals[a]||0)).map(v=>({value:v,label:v}));
+}
+function reportingTypeChanged(){populateReportingSelectors();renderReporting();}
+function reportingCountChanged(){populateReportingSelectors(true);renderReporting();}
+function populateReportingSelectors(preserve=false){
+  const type=document.getElementById('report-type')?.value||'customers',count=Number(document.getElementById('report-count')?.value||2),host=document.getElementById('reporting-entity-selectors');if(!host)return;
+  const old=[...host.querySelectorAll('select')].map(x=>x.value),opts=reportingOptions(type);
+  host.innerHTML=Array.from({length:count},(_,i)=>{const selected=preserve&&old[i]&&opts.some(o=>o.value===old[i])?old[i]:(opts[i]?.value||opts[0]?.value||'');return `<div class="reporting-entity-slot reporting-field"><label>${reportingTypeLabel(type)} ${i+1}${infoIcon(`Selección ${i+1}. La primera entidad se utiliza como referencia inicial para calcular diferencias.`)}</label><select id="report-entity-${i}" class="filter-select" onchange="renderReporting()">${opts.map(o=>`<option value="${String(o.value).replace(/"/g,'&quot;')}" ${o.value===selected?'selected':''}>${o.label}</option>`).join('')}</select></div>`;}).join('');
+  const ref=document.getElementById('report-reference');if(ref){ref.innerHTML=Array.from({length:count},(_,i)=>`<option value="${i}">Entidad ${i+1}</option>`).join('');if(Number(ref.value)>=count)ref.value='0';}
+}
+function reportingRowsForEntity(type,value){
+  if(type==='periods')return reportingPeriodRows(value);
+  return activeRows(FILTERED).filter(r=>reportingEntityKey(type,r)===value);
+}
+function reportingAggregate(rows){
+  const orders=new Set(),customers=new Set(),skus=new Set(),brands=new Set(),months=new Set(),chains=new Set();let sales=0,gp=0,cases=0;const byBrand={},bySku={};
+  activeRows(rows).forEach(r=>{sales+=r.amount;gp+=r.gp;cases+=r.qty;orders.add(r.invoice_number);customers.add(r.customer_name);if(r.sku)skus.add(r.sku);if(r.brand)brands.add(r.brand);if(r.month)months.add(r.month);if(r.chain)chains.add(r.chain);if(r.brand)byBrand[r.brand]=(byBrand[r.brand]||0)+r.amount;if(r.sku)bySku[r.sku]=(bySku[r.sku]||0)+r.amount;});
+  const top=(obj)=>Object.keys(obj).sort((a,b)=>obj[b]-obj[a])[0]||'—';
+  return {sales,gp,cases,orders:orders.size,customers:customers.size,skus:skus.size,brands:brands.size,months:months.size,chains:chains.size,margin:sales?gp/sales*100:0,aov:orders.size?sales/orders.size:0,salesPerCustomer:customers.size?sales/customers.size:0,casesPerCustomer:customers.size?cases/customers.size:0,gpPerCustomer:customers.size?gp/customers.size:0,avgMonthly:months.size?sales/months.size:0,topBrand:top(byBrand),topSku:top(bySku)};
+}
+function reportingMetricDefinitions(type){
+  const common=[
+    {group:'Performance',key:'sales',label:'Ventas',format:'money',info:'Suma de ventas netas. Excluye facturas canceladas y muestras.'},
+    {group:'Performance',key:'gp',label:'Gross Profit',format:'money',info:'Ventas netas menos costo landed registrado.'},
+    {group:'Performance',key:'margin',label:'Margen bruto',format:'pct',info:'Gross Profit ÷ Ventas netas × 100.'},
+    {group:'Performance',key:'cases',label:'Cajas',format:'number',info:'Cantidad total vendida en cajas o unidades equivalentes registradas.'},
+    {group:'Performance',key:'orders',label:'Órdenes',format:'number',info:'Cantidad de números de factura únicos.'},
+    {group:'Productividad',key:'aov',label:'Average Order Value',format:'money',info:'Ventas ÷ órdenes únicas.'},
+    {group:'Productividad',key:'avgMonthly',label:'Promedio mensual',format:'money',info:'Ventas ÷ meses con actividad.'}
+  ];
+  const extras={
+    customers:[{group:'Portafolio',key:'brands',label:'Marcas compradas',format:'number',info:'Cantidad de marcas distintas compradas.'},{group:'Portafolio',key:'skus',label:'SKUs comprados',format:'number',info:'Cantidad de SKUs distintos comprados.'},{group:'Portafolio',key:'topBrand',label:'Marca principal',format:'text',info:'Marca con mayor venta dentro de la entidad.'},{group:'Productividad',key:'casesPerCustomer',label:'Cajas por cliente',format:'number1',info:'En una comparación de clientes este valor equivale a las cajas totales porque cada entidad es un cliente.'}],
+    products:[{group:'Distribución',key:'customers',label:'Clientes compradores',format:'number',info:'Clientes únicos que compraron el SKU.'},{group:'Distribución',key:'chains',label:'Cadenas activas',format:'number',info:'Cadenas únicas donde se vendió el SKU.'},{group:'Portafolio',key:'topBrand',label:'Marca',format:'text',info:'Marca asociada con mayor venta del conjunto seleccionado.'},{group:'Productividad',key:'salesPerCustomer',label:'Venta por cliente',format:'money',info:'Ventas del SKU ÷ clientes compradores.'}],
+    brands:[{group:'Distribución',key:'customers',label:'Clientes compradores',format:'number',info:'Clientes únicos que compraron la marca.'},{group:'Distribución',key:'chains',label:'Cadenas activas',format:'number',info:'Cadenas únicas con venta de la marca.'},{group:'Portafolio',key:'skus',label:'SKUs activos',format:'number',info:'SKUs distintos vendidos de la marca.'},{group:'Portafolio',key:'topSku',label:'SKU principal',format:'text',info:'SKU con mayor venta dentro de la marca.'}],
+    reps:[{group:'Cartera',key:'customers',label:'Clientes activos',format:'number',info:'Clientes únicos vendidos por el representante.'},{group:'Portafolio',key:'brands',label:'Marcas activas',format:'number',info:'Marcas distintas vendidas por el representante.'},{group:'Portafolio',key:'skus',label:'SKUs activos',format:'number',info:'SKUs distintos vendidos por el representante.'},{group:'Productividad',key:'salesPerCustomer',label:'Venta por cliente',format:'money',info:'Ventas ÷ clientes únicos.'},{group:'Productividad',key:'casesPerCustomer',label:'Cajas por cliente',format:'number1',info:'Cajas ÷ clientes únicos.'}],
+    chains:[{group:'Cartera',key:'customers',label:'Clientes / localidades',format:'number',info:'Clientes únicos asociados con la cadena.'},{group:'Portafolio',key:'brands',label:'Marcas activas',format:'number',info:'Marcas distintas vendidas en la cadena.'},{group:'Portafolio',key:'skus',label:'SKUs activos',format:'number',info:'SKUs distintos vendidos en la cadena.'},{group:'Productividad',key:'salesPerCustomer',label:'Venta por localidad',format:'money',info:'Ventas ÷ clientes o localidades activas.'},{group:'Productividad',key:'gpPerCustomer',label:'GP por localidad',format:'money',info:'Gross Profit ÷ clientes o localidades activas.'}],
+    periods:[{group:'Cobertura',key:'customers',label:'Clientes activos',format:'number',info:'Clientes únicos con compra durante el período.'},{group:'Cobertura',key:'brands',label:'Marcas activas',format:'number',info:'Marcas distintas con ventas durante el período.'},{group:'Cobertura',key:'skus',label:'SKUs activos',format:'number',info:'SKUs distintos con ventas durante el período.'},{group:'Cobertura',key:'chains',label:'Cadenas activas',format:'number',info:'Cadenas distintas con ventas durante el período.'},{group:'Productividad',key:'salesPerCustomer',label:'Venta por cliente',format:'money',info:'Ventas del período ÷ clientes activos.'}]
+  };
+  return common.concat(extras[type]||[]);
+}
+function reportingFormat(v,fmt){if(fmt==='money')return $(v);if(fmt==='pct')return P(v);if(fmt==='number')return Number(v||0).toLocaleString('en-US',{maximumFractionDigits:0});if(fmt==='number1')return Number(v||0).toLocaleString('en-US',{minimumFractionDigits:1,maximumFractionDigits:1});return String(v??'—');}
+function reportingComparable(v){return typeof v==='number'&&Number.isFinite(v);}
+function renderReporting(){
+  const host=document.getElementById('reporting-summary');if(!host)return;
+  if(!document.querySelector('#reporting-entity-selectors select'))populateReportingSelectors();
+  const type=document.getElementById('report-type')?.value||'customers',count=Number(document.getElementById('report-count')?.value||2),primary=document.getElementById('report-primary')?.value||'sales',refIndex=Math.min(Number(document.getElementById('report-reference')?.value||0),count-1),onlyDiff=document.getElementById('report-only-differences')?.checked,highlight=document.getElementById('report-highlight-best')?.checked;
+  const entities=Array.from({length:count},(_,i)=>document.getElementById(`report-entity-${i}`)?.value).filter(Boolean);
+  if(!entities.length){host.innerHTML='<div class="reporting-empty">No hay entidades disponibles bajo los filtros actuales.</div>';document.getElementById('tbl-reporting').innerHTML='';destroyChart('ch-reporting-trend');return;}
+  const data=entities.map((name,i)=>({name,label:document.getElementById(`report-entity-${i}`)?.selectedOptions[0]?.textContent||name,rows:reportingRowsForEntity(type,name),color:REPORT_ENTITY_COLORS[i],metrics:null}));data.forEach(x=>x.metrics=reportingAggregate(x.rows));
+  const ref=data[refIndex]||data[0],primaryDef={sales:['Ventas','money'],gp:['Gross Profit','money'],cases:['Cajas','number'],margin:['Margen','pct'],orders:['Órdenes','number']}[primary]||['Ventas','money'];
+  host.innerHTML=data.map(x=>{const val=x.metrics[primary],rv=ref.metrics[primary],delta=reportingComparable(val)&&reportingComparable(rv)&&rv!==0?(val-rv)/Math.abs(rv)*100:null;return `<div class="reporting-hero" style="--entity-color:${x.color}"><div class="reporting-hero-name">${x.label}</div><div class="reporting-hero-period">${primaryDef[0]} · ${x===ref?'Referencia':'Comparado'}</div><div class="reporting-hero-value">${reportingFormat(val,primaryDef[1])}</div><div class="reporting-hero-sub">${x===ref?'Base de comparación':delta===null?'Sin base comparable':`${delta>=0?'+':''}${delta.toFixed(1)}% vs referencia`}</div></div>`;}).join('');
+  const defs=reportingMetricDefinitions(type);let body='',group='';
+  defs.forEach(def=>{const vals=data.map(x=>x.metrics[def.key]);const nums=vals.filter(reportingComparable);const allSame=nums.length===vals.length&&nums.length>1&&Math.max(...nums)-Math.min(...nums)<(def.format==='pct'?.1:1);if(onlyDiff&&allSame)return;if(def.group!==group){group=def.group;body+=`<tr class="reporting-group-row"><td colspan="${data.length+1}">${group}</td></tr>`;}const max=nums.length?Math.max(...nums):null,min=nums.length?Math.min(...nums):null;body+=`<tr><td class="metric-name">${def.label}${infoIcon(def.info)}</td>${data.map((x,i)=>{const v=vals[i],rv=vals[refIndex],best=highlight&&reportingComparable(v)&&max!==min&&v===max,worst=highlight&&reportingComparable(v)&&max!==min&&v===min;let delta='';if(i!==refIndex&&reportingComparable(v)&&reportingComparable(rv)){if(def.format==='pct')delta=`${v-rv>=0?'+':''}${(v-rv).toFixed(1)} pp`;else if(rv!==0)delta=`${(v-rv)/Math.abs(rv)*100>=0?'+':''}${((v-rv)/Math.abs(rv)*100).toFixed(1)}%`;}return `<td class="r ${best?'reporting-best':worst?'reporting-worst':''}">${reportingFormat(v,def.format)}${delta?`<span class="reporting-delta">${delta} vs ref.</span>`:''}</td>`;}).join('')}</tr>`;});
+  document.getElementById('tbl-reporting').innerHTML=`<thead><tr><th>Métrica</th>${data.map((x,i)=>`<th class="entity-head" style="color:${x.color}">${x.label}${i===refIndex?' · Ref.':''}</th>`).join('')}</tr></thead><tbody>${body}</tbody>`;
+  const months=activeMonths(ENRICHED),metricGetter={sales:r=>r.amount,gp:r=>r.gp,cases:r=>r.qty,margin:null,orders:null}[primary];
+  const datasets=data.map(x=>{const monthly=months.map(m=>{const rr=x.rows.filter(r=>r.month===m);if(primary==='margin'){const a=reportingAggregate(rr);return a.margin;}if(primary==='orders')return new Set(rr.map(r=>r.invoice_number)).size;return rr.reduce((s,r)=>s+(metricGetter?metricGetter(r):0),0);});return {label:x.label,data:monthly,borderColor:x.color,backgroundColor:x.color+'22',tension:.3,fill:false,pointRadius:3,pointHoverRadius:6};});
+  mkChart('ch-reporting-trend',{type:'line',data:{labels:months.map(m=>MN_SHORT[m]),datasets},options:{responsive:true,maintainAspectRatio:false,animation:false,resizeDelay:150,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom'},tooltip:primary==='sales'||primary==='gp'?TT_DOLLAR:{}},scales:{y:{beginAtZero:true,ticks:{callback:v=>primary==='sales'||primary==='gp'?'$'+Number(v).toLocaleString('en-US'):primary==='margin'?v+'%':Number(v).toLocaleString('en-US')}}}}});
+}
+
 function renderMonthly(){
   const d=FILTERED,months=activeMonths(d);
   const cA=agg(d,r=>r.channel),ts=Object.values(cA).reduce((s,v)=>s+v.sales,0);
@@ -2510,8 +2645,8 @@ function renderVoids(){
 // ============================================================
 // TAB SWITCHING
 // ============================================================
-const TABS={overview:renderOverview,brands:renderBrands,reps:renderReps,customers:renderClients,monthly:renderMonthly,voids:renderVoids};
-const TAB_LIST=["overview","brands","customers","reps","monthly","voids"];
+const TABS={overview:renderOverview,brands:renderBrands,reps:renderReps,customers:renderClients,reporting:renderReporting,voids:renderVoids};
+const TAB_LIST=["overview","brands","customers","reps","reporting","voids"];
 let activeTab="overview";
 function showTab(name){
   document.querySelectorAll(".tab-panel").forEach(p=>p.classList.remove("active"));
