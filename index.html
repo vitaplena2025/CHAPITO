@@ -535,6 +535,10 @@ body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',-app
   box-shadow:0 10px 28px rgba(0,0,0,0.55);text-align:left;white-space:normal;
 }
 .info-icon:hover .info-tip{display:block;}
+.info-icon{z-index:10;}
+.info-icon:hover{z-index:999;}
+.info-tip{z-index:1000;pointer-events:none;}
+.chart-card,.kpi,.sc-card{overflow:visible;}
 .info-tip::after{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:#0a0f1a;}
 th .info-icon{margin-left:3px;}
 th .info-tip{bottom:auto;top:calc(100% + 8px);}
@@ -597,8 +601,9 @@ th .info-tip::after{top:auto;bottom:100%;border-top-color:transparent;border-bot
 
 
 /* PORTFOLIO DECISION KPIs */
-.portfolio-decision-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:0 0 18px;}
-.portfolio-insight-card{background:linear-gradient(135deg,var(--surface),rgba(28,35,51,.86));border:1px solid var(--border);border-radius:12px;padding:17px 18px;position:relative;overflow:hidden;min-height:132px;}
+.portfolio-decision-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:0 0 18px;align-items:start;}
+.portfolio-insight-card{background:linear-gradient(135deg,var(--surface),rgba(28,35,51,.86));border:1px solid var(--border);border-radius:12px;padding:17px 18px;position:relative;overflow:visible;height:154px;z-index:1;}
+.portfolio-insight-card:hover,.portfolio-insight-card.is-expanded{z-index:80;border-color:var(--border-strong);}
 .portfolio-insight-card::before{content:"";position:absolute;left:0;top:0;width:3px;height:100%;background:var(--insight-color,var(--accent));}
 .portfolio-insight-label{font-size:10.5px;color:var(--text3);font-weight:800;text-transform:uppercase;letter-spacing:.055em;display:flex;align-items:center;gap:4px;margin-bottom:10px;}
 .portfolio-insight-value{font-size:25px;font-weight:750;letter-spacing:-.025em;color:var(--text);line-height:1.05;}
@@ -613,7 +618,18 @@ th .info-tip::after{top:auto;bottom:100%;border-top-color:transparent;border-bot
 .portfolio-chip-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:145px;}
 .portfolio-denominator-note{font-size:9.5px;color:var(--text3);line-height:1.4;margin-top:7px;}
 .portfolio-insight-label .info-icon{margin-left:2px;margin-right:auto;}
+.portfolio-insight-label .info-icon:hover{z-index:500;}
+.portfolio-insight-label .info-tip{left:0;transform:none;bottom:calc(100% + 9px);width:min(290px,calc(100vw - 48px));z-index:600;}
+.portfolio-insight-label .info-tip::after{left:10px;transform:none;}
 .portfolio-status{display:inline-flex;align-items:center;gap:5px;font-size:8.5px;font-weight:800;text-transform:uppercase;letter-spacing:.065em;padding:3px 7px;border-radius:6px;background:rgba(16,185,129,.12);color:var(--green);margin-left:auto;}
+.portfolio-expand-btn{width:25px;height:25px;border:1px solid var(--border);border-radius:7px;background:rgba(255,255,255,.025);color:var(--text3);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto;transition:all .18s ease;margin-left:4px;}
+.portfolio-expand-btn:hover{border-color:var(--border-strong);background:rgba(255,255,255,.06);color:var(--text);}
+.portfolio-expand-btn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.2;transition:transform .18s ease;}
+.portfolio-insight-card.is-expanded .portfolio-expand-btn svg{transform:rotate(180deg);}
+.portfolio-insight-details{display:none;position:absolute;left:10px;right:10px;top:calc(100% + 7px);padding:12px 13px;max-height:250px;overflow:auto;background:#111827;border:1px solid var(--border-strong);border-radius:10px;box-shadow:0 18px 40px rgba(0,0,0,.48);z-index:120;}
+.portfolio-insight-card.is-expanded .portfolio-insight-details{display:block;animation:portfolioDrop .16s ease;}
+@keyframes portfolioDrop{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:none}}
+.portfolio-insight-details::-webkit-scrollbar{width:6px}.portfolio-insight-details::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:8px;}
 .portfolio-status.soon{background:rgba(148,163,184,.09);color:var(--text3);}
 .portfolio-coming-soon{opacity:.48;filter:grayscale(.35);}
 .portfolio-coming-soon .portfolio-insight-value{color:var(--text4);}
@@ -1836,6 +1852,31 @@ function portfolioPreviousPeriodRows(chanFilter){
   return {rows,months:prev,available:complete&&rows.length>0,reason:complete?"":"Falta data para uno o más meses del período anterior."};
 }
 
+function togglePortfolioCard(btn){
+  const card=btn.closest('.portfolio-insight-card');
+  if(!card)return;
+  const willOpen=!card.classList.contains('is-expanded');
+  document.querySelectorAll('.portfolio-insight-card.is-expanded').forEach(other=>{
+    if(other!==card){
+      other.classList.remove('is-expanded');
+      const otherBtn=other.querySelector('.portfolio-expand-btn');
+      if(otherBtn)otherBtn.setAttribute('aria-expanded','false');
+    }
+  });
+  card.classList.toggle('is-expanded',willOpen);
+  btn.setAttribute('aria-expanded',willOpen?'true':'false');
+}
+
+document.addEventListener('click',function(e){
+  if(!e.target.closest('.portfolio-insight-card')){
+    document.querySelectorAll('.portfolio-insight-card.is-expanded').forEach(card=>{
+      card.classList.remove('is-expanded');
+      const btn=card.querySelector('.portfolio-expand-btn');
+      if(btn)btn.setAttribute('aria-expanded','false');
+    });
+  }
+});
+
 function renderBrands(){
   const chanFilter = document.getElementById("cf-portfolio-channel")?.value || "all";
   const d = chanFilter==="all" ? FILTERED : FILTERED.filter(r=>r.channel===chanFilter);
@@ -1890,7 +1931,8 @@ function renderBrands(){
   availability.push({name:"Portfolio Matrix",ok:prevPeriod.available,reason:prevPeriod.available?`Comparable period: ${prevPeriod.months.map(m=>MN_SHORT[m]).join(", ")}`:prevPeriod.reason});
   document.getElementById("portfolio-data-note").innerHTML=`<span class="dot"></span><span>${availability.filter(x=>x.ok).length}/5 KPIs available with current data · ${availability.filter(x=>!x.ok).map(x=>x.name+": "+x.reason).join(" · ")||"All required data is available"}</span>`;
 
-  const availableCard=(color,label,value,sub,rows="",info="")=>`<div class="portfolio-insight-card" style="--insight-color:${color}"><div class="portfolio-insight-label"><span>${label}</span>${info?infoIcon(info):""}<span class="portfolio-status">Disponible</span></div><div class="portfolio-insight-value">${value}</div><div class="portfolio-insight-sub">${sub}</div>${rows}</div>`;
+  const expandIcon='<svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>';
+  const availableCard=(color,label,value,sub,rows="",info="")=>`<div class="portfolio-insight-card" style="--insight-color:${color}"><div class="portfolio-insight-label"><span>${label}</span>${info?infoIcon(info):""}<span class="portfolio-status">Disponible</span>${rows?`<button type="button" class="portfolio-expand-btn" aria-label="Mostrar detalles de ${label}" aria-expanded="false" onclick="togglePortfolioCard(this)">${expandIcon}</button>`:""}</div><div class="portfolio-insight-value">${value}</div><div class="portfolio-insight-sub">${sub}</div>${rows?`<div class="portfolio-insight-details">${rows}</div>`:""}</div>`;
   const soonCard=(color,label,note,info="")=>`<div class="portfolio-insight-card portfolio-coming-soon" style="--insight-color:${color}" title="${note}"><div class="portfolio-insight-label"><span>${label}</span>${info?infoIcon(info):""}<span class="portfolio-status soon">Coming Soon</span></div><div class="portfolio-insight-value">N/A</div><div class="portfolio-insight-sub">${note}</div></div>`;
   const catalogSkuCount=Object.keys(SKUS).length;
   const activeSkuCount=sK.length;
