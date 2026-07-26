@@ -544,6 +544,29 @@ th .info-icon{margin-left:3px;}
 th .info-tip{bottom:auto;top:calc(100% + 8px);}
 th .info-tip::after{top:auto;bottom:100%;border-top-color:transparent;border-bottom-color:#0a0f1a;}
 
+
+/* SALES TEAM INTELLIGENCE */
+.sales-intelligence-grid{display:grid;grid-template-columns:1fr;gap:14px;margin-bottom:22px;align-items:start;}
+.sales-chart-wrap{position:relative;width:100%;height:300px;max-height:300px;}
+.sales-chart-wrap canvas{display:block!important;width:100%!important;height:100%!important;max-height:300px!important;}
+.sales-ranking-grid{display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:22px;}
+.sales-rank-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:15px 16px;position:relative;overflow:hidden;}
+.sales-rank-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--rank-color,var(--accent));}
+.sales-rank-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;}
+.sales-rank-name{font-size:13px;font-weight:700;color:var(--text);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.sales-rank-score{font-size:22px;font-weight:800;color:var(--text);letter-spacing:-.03em;}
+.sales-rank-meta{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:10px;}
+.sales-rank-meta span{font-size:10px;color:var(--text3);display:flex;justify-content:space-between;gap:5px;}
+.sales-rank-meta b{color:var(--text);font-weight:700;}
+.sales-progress{height:8px;background:var(--surface2);border-radius:999px;overflow:hidden;}
+.sales-progress>span{display:block;height:100%;border-radius:999px;background:var(--rank-color,var(--accent));}
+.sales-table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.sales-table-scroll .data-table{min-width:1850px;}
+@media(min-width:640px){.sales-intelligence-grid{grid-template-columns:repeat(2,minmax(0,1fr));}.sales-ranking-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
+@media(min-width:1100px){.sales-intelligence-grid{grid-template-columns:repeat(4,minmax(0,1fr));}.sales-ranking-grid{grid-template-columns:repeat(3,minmax(0,1fr));}}
+@media(max-width:820px){.content{padding:16px 12px}.chart-grid-2,.sales-chart-grid{grid-template-columns:1fr}.sales-chart-wrap{height:260px;max-height:260px}.sales-chart-wrap canvas{max-height:260px!important}.chart-card{padding:15px}.kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.kpi{padding:14px 13px}.kpi-value{font-size:22px}.portfolio-insight-value{font-size:23px}.section-header{align-items:flex-start}.info-tip{position:fixed;left:12px!important;right:12px!important;bottom:18px!important;top:auto!important;transform:none!important;width:auto;max-width:none}}
+@media(max-width:430px){.kpi-grid{grid-template-columns:1fr 1fr}.sales-intelligence-grid,.sales-ranking-grid{grid-template-columns:1fr}.sales-chart-wrap{height:235px;max-height:235px}.sales-chart-wrap canvas{max-height:235px!important}.chart-title{font-size:12px;line-height:1.35}.kpi-value{font-size:21px}.kpi-label{font-size:10px}}
+
 /* SECTIONS & TABLES */
 .section{margin-top:22px;}
 .section-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
@@ -780,13 +803,28 @@ th .info-tip::after{top:auto;bottom:100%;border-top-color:transparent;border-bot
 <div id="tab-reps" class="tab-panel">
 <div class="content">
   <div class="kpi-grid" id="kpi-reps"></div>
-  <div class="chart-grid chart-grid-2">
-    <div class="chart-card"><div class="chart-title"><span class="accent-dot"></span>Ventas por Rep ($)</div><canvas id="ch-rep-bar" height="260"></canvas></div>
-    <div class="chart-card"><div class="chart-title"><span class="accent-dot"></span>Cajas por Rep</div><canvas id="ch-rep-cases" height="260"></canvas></div>
+
+  <div class="section-header"><div><div class="section-title">Sales Team Intelligence</div><div class="section-sub">Crecimiento, productividad, desarrollo de cartera y calidad de ejecución comercial.</div></div></div>
+  <div class="sales-intelligence-grid" id="sales-intelligence-kpis"></div>
+
+  <div class="chart-grid chart-grid-2 sales-chart-grid">
+    <div class="chart-card sales-chart-card"><div class="chart-title"><span class="accent-dot"></span>Ventas por Rep ($)${infoIcon("Ventas netas por representante durante el período seleccionado. Excluye facturas canceladas y muestras.")}</div><div class="sales-chart-wrap"><canvas id="ch-rep-bar"></canvas></div></div>
+    <div class="chart-card sales-chart-card"><div class="chart-title"><span class="accent-dot"></span>Cajas por Rep${infoIcon("Total de cajas vendidas por cada representante durante el período seleccionado.")}</div><div class="sales-chart-wrap"><canvas id="ch-rep-cases"></canvas></div></div>
   </div>
+
+  <div class="chart-grid chart-grid-2 sales-chart-grid">
+    <div class="chart-card sales-chart-card"><div class="chart-title"><span class="accent-dot"></span>Ventas vs Margen${infoIcon("Cada punto es un representante. Eje X: ventas. Eje Y: margen bruto. Ayuda a distinguir volumen rentable de volumen con margen débil.")}</div><div class="sales-chart-wrap"><canvas id="ch-rep-profitability"></canvas></div></div>
+    <div class="chart-card sales-chart-card"><div class="chart-title"><span class="accent-dot"></span>Tendencia Mensual por Rep${infoIcon("Evolución mensual de las ventas. Para mantener la gráfica legible se muestran los representantes con mayor venta en el período.")}</div><div class="sales-chart-wrap"><canvas id="ch-rep-trend"></canvas></div></div>
+  </div>
+
   <div class="section">
-    <div class="section-header"><div class="section-title">Scorecard del Equipo de Ventas</div></div>
-    <div class="table-card"><table class="data-table" id="tbl-rep"></table></div>
+    <div class="section-header"><div><div class="section-title">Ranking de Eficiencia Comercial</div><div class="section-sub">Score compuesto de 0 a 100, ajustado al desempeño relativo del equipo bajo los filtros activos.</div></div></div>
+    <div class="sales-ranking-grid" id="sales-ranking"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-header"><div><div class="section-title">Scorecard del Equipo de Ventas</div><div class="section-sub">Desliza horizontalmente en móvil para consultar todas las métricas.</div></div></div>
+    <div class="table-card sales-table-scroll"><table class="data-table" id="tbl-rep"></table></div>
   </div>
 </div>
 </div>
@@ -2081,23 +2119,80 @@ function renderBrands(){
   document.getElementById("tbl-slow-sku").innerHTML=`<thead><tr><th>Foto</th><th>SKU</th><th>Nombre</th><th>Marca</th><th class="r">Órdenes</th><th class="r">Cajas</th><th class="r">Ventas $</th><th class="r">Margen</th></tr></thead><tbody>${bottomRows}</tbody>`;
 }
 
+function repRowsIgnoringPeriod(){
+  const f=otherFilterValues();
+  return activeRows(ENRICHED.filter(x=>
+    (f.co==="all"||x.company===f.co)&&(f.r==="all"||x.sales_rep===f.r)&&(f.ch==="all"||x.chain===f.ch)&&
+    (f.cfChan==="all"||x.department===f.cfChan)&&(f.cfCat==="all"||x.channel===f.cfCat)&&
+    (f.cfBrand==="all"||x.brand===f.cfBrand)&&(f.cfSku==="all"||x.sku===f.cfSku)&&(f.cfStatus==="all"||x.status===f.cfStatus)
+  ));
+}
+function repDetailedAgg(rows){
+  const out={};
+  activeRows(rows).forEach(r=>{
+    const k=r.sales_rep;if(!k)return;
+    if(!out[k])out[k]={sales:0,gp:0,cases:0,orders:new Set(),customers:new Set(),skus:new Set(),brands:new Set(),days:new Set(),months:{}};
+    const v=out[k];v.sales+=r.amount;v.gp+=r.gp;v.cases+=r.qty;v.orders.add(r.invoice_number);v.customers.add(r.customer_name);if(r.sku)v.skus.add(r.sku);if(r.brand)v.brands.add(r.brand);if(r.invoice_date)v.days.add(r.invoice_date);
+    if(!v.months[r.month])v.months[r.month]=0;v.months[r.month]+=r.amount;
+  });
+  Object.values(out).forEach(v=>{v.orders=v.orders.size;v.customerSet=v.customers;v.customers=v.customers.size;v.skuCount=v.skus.size;v.brandCount=v.brands.size;v.activeDays=v.days.size;v.margin=v.sales?v.gp/v.sales*100:0;v.aov=v.orders?v.sales/v.orders:0;v.salesPerCustomer=v.customers?v.sales/v.customers:0;v.casesPerCustomer=v.customers?v.cases/v.customers:0;v.salesPerDay=v.activeDays?v.sales/v.activeDays:0;});
+  return out;
+}
+function normalizeScore(value,values){const m=Math.max(...values,0);return m>0?Math.max(0,Math.min(100,value/m*100)):0;}
 function renderReps(){
-  const d=FILTERED,rA=agg(d,r=>r.sales_rep);
-  const ts=Object.values(rA).reduce((s,v)=>s+v.sales,0);
-  const rK=Object.keys(rA).filter(k=>rA[k].sales>0&&k).sort((a,b)=>rA[b].sales-rA[a].sales);
-  const top=rK[0]||"";
+  const d=FILTERED,current=repDetailedAgg(d),rK=Object.keys(current).filter(k=>current[k].sales>0).sort((a,b)=>current[b].sales-current[a].sales);
+  const ts=rK.reduce((s,k)=>s+current[k].sales,0),tg=rK.reduce((s,k)=>s+current[k].gp,0),top=rK[0]||"";
+  const prevMonths=customerComparablePreviousMonths(),prevRows=prevMonths?rowsForMonths(prevMonths):[],previous=prevMonths?repDetailedAgg(prevRows):{};
+  const history=repDetailedAgg(repRowsIgnoringPeriod());
+  const currentCustomersByRep={},prevCustomersByRep={};
+  rK.forEach(k=>{currentCustomersByRep[k]=current[k].customerSet||new Set();prevCustomersByRep[k]=previous[k]?.customerSet||new Set();});
+
   document.getElementById("kpi-reps").innerHTML=`
-    <div class="kpi" style="--kpi-color:#34A852"><div class="kpi-label">Reps Activos</div><div class="kpi-value">${rK.length}</div></div>
-    <div class="kpi" style="--kpi-color:#6366f1"><div class="kpi-label">#1 Rep</div><div class="kpi-value" style="font-size:17px">${top}</div><div class="kpi-sub">${$(rA[top]?.sales||0)}</div></div>
-    <div class="kpi" style="--kpi-color:#F4C124"><div class="kpi-label">Promedio por Rep${infoIcon("Ventas totales del período ÷ cantidad de reps activos (con al menos 1 venta) — no es una meta, es un promedio real de referencia.")}</div><div class="kpi-value">${$(ts/Math.max(rK.length,1))}</div></div>
-    <div class="kpi" style="--kpi-color:#ec4899"><div class="kpi-label">Ventas Totales</div><div class="kpi-value">${$(ts)}</div></div>`;
-  mkChart("ch-rep-bar",{type:"bar",data:{labels:rK,datasets:[{label:"Ventas",data:rK.map(k=>rA[k].sales),backgroundColor:rK.map((_,i)=>REP_COLORS[i%REP_COLORS.length]),borderRadius:6}]},options:{...xDollar(),indexAxis:"y",responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`Ventas: ${$(ctx.parsed.x)}`}}}}});
-  mkChart("ch-rep-cases",{type:"bar",data:{labels:rK,datasets:[{label:"Cajas",data:rK.map(k=>rA[k].cases),backgroundColor:rK.map((_,i)=>REP_COLORS[i%REP_COLORS.length]+"aa"),borderRadius:6}]},options:{...CD,indexAxis:"y",responsive:true,plugins:{legend:{display:false}}}});
-  let rows=rK.map((k,i)=>{
-    const v=rA[k],pct=v.sales/ts*100;
-    return`<tr><td style="color:#F4C124;font-weight:700">${i+1}</td><td class="bold">${k}</td><td class="r bold">${$(v.sales)}</td><td class="r"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${pct}%"></div></div><span>${P(pct)}</span></div></td><td class="r">${v.cases.toLocaleString()}</td><td class="r">${v.orders}</td><td class="r">${v.customers}</td><td class="r">${$(v.gp)}</td><td class="r">${mpill(v.margin)}</td></tr>`;
-  }).join("");
-  document.getElementById("tbl-rep").innerHTML=`<thead><tr><th>#</th><th>Representante</th><th class="r">Ventas $</th><th class="r">% Mix</th><th class="r">Cajas</th><th class="r">Órdenes</th><th class="r">Clientes</th><th class="r">GP $</th><th class="r">Margen${infoIcon("GP ÷ Ventas de las cuentas de este rep × 100. Verde ≥30% · Amarillo 20-30% · Rojo <20%.")}</th></tr></thead><tbody>${rows}</tbody>`;
+    <div class="kpi" style="--kpi-color:#34A852"><div class="kpi-label">Reps Activos${infoIcon("Representantes con al menos una venta neta en el período seleccionado.")}</div><div class="kpi-value">${rK.length}</div><div class="kpi-sub">Con actividad comercial</div></div>
+    <div class="kpi" style="--kpi-color:#6366f1"><div class="kpi-label">#1 Rep${infoIcon("Representante con mayor venta neta en el período seleccionado.")}</div><div class="kpi-value" style="font-size:17px">${top||'—'}</div><div class="kpi-sub">${$(current[top]?.sales||0)}</div></div>
+    <div class="kpi" style="--kpi-color:#F4C124"><div class="kpi-label">Promedio por Rep${infoIcon("Ventas totales del período ÷ cantidad de reps activos. Es una referencia real, no una meta.")}</div><div class="kpi-value">${$(ts/Math.max(rK.length,1))}</div><div class="kpi-sub">Venta promedio</div></div>
+    <div class="kpi" style="--kpi-color:#ec4899"><div class="kpi-label">Ventas Totales${infoIcon("Ventas netas del equipo bajo los filtros y período activos.")}</div><div class="kpi-value">${$(ts)}</div><div class="kpi-sub">GP ${$(tg)} · ${P(ts?tg/ts*100:0)} margen</div></div>`;
+
+  const salesVals=rK.map(k=>current[k].sales),gpVals=rK.map(k=>current[k].gp),custVals=rK.map(k=>current[k].customers),newVals=[],retVals=[],penVals=[];
+  rK.forEach(k=>{
+    const cur=currentCustomersByRep[k],pre=prevCustomersByRep[k];
+    const newC=[...cur].filter(c=>!pre.has(c)).length;
+    const retained=[...pre].filter(c=>cur.has(c)).length;
+    const retention=pre.size?retained/pre.size*100:0;
+    newVals.push(newC);retVals.push(retention);penVals.push(current[k].skuCount);
+    current[k].newCustomers=newC;current[k].lostCustomers=[...pre].filter(c=>!cur.has(c)).length;current[k].retention=retention;
+    current[k].growth=previous[k]?.sales?((current[k].sales-previous[k].sales)/previous[k].sales*100):null;
+  });
+  rK.forEach((k,i)=>{const v=current[k];v.efficiency=Math.round(normalizeScore(v.sales,salesVals)*.25+normalizeScore(v.gp,gpVals)*.20+normalizeScore(v.customers,custVals)*.15+normalizeScore(v.newCustomers,newVals)*.10+normalizeScore(v.retention,retVals)*.15+normalizeScore(v.skuCount,penVals)*.15);});
+  const avgGrowth=rK.filter(k=>current[k].growth!==null).length?rK.filter(k=>current[k].growth!==null).reduce((s,k)=>s+current[k].growth,0)/rK.filter(k=>current[k].growth!==null).length:null;
+  const avgAov=rK.length?rK.reduce((s,k)=>s+current[k].aov,0)/rK.length:0,avgSPC=rK.length?rK.reduce((s,k)=>s+current[k].salesPerCustomer,0)/rK.length:0,avgPen=rK.length?rK.reduce((s,k)=>s+current[k].skuCount,0)/rK.length:0;
+  const bestEff=rK.slice().sort((a,b)=>current[b].efficiency-current[a].efficiency)[0];
+  const detail=(title,items)=>`<div class="portfolio-detail-title">${title}</div>${items.map(x=>`<div class="portfolio-detail-row"><span>${x[0]}</span><strong>${x[1]}</strong></div>`).join('')}`;
+  document.getElementById("sales-intelligence-kpis").innerHTML=
+    customerInsightCard('#22c55e','Growth vs Previous Period',avgGrowth===null?'N/A':`${avgGrowth>=0?'+':''}${P(avgGrowth)}`,prevMonths?'Promedio simple del crecimiento individual de los reps.':'Selecciona un período con meses anteriores comparables.',prevMonths?detail('Crecimiento por rep',rK.map(k=>[k,current[k].growth===null?'Nuevo / sin base':`${current[k].growth>=0?'+':''}${P(current[k].growth)}`])):'',"(Ventas actuales − ventas del período anterior comparable) ÷ ventas anteriores × 100.",!prevMonths)+
+    customerInsightCard('#6366f1','Sales Target Achievement','N/A','Requiere metas mensuales o trimestrales por representante.','','Ventas reales ÷ meta asignada × 100. Se activará cuando exista una tabla de objetivos.',true)+
+    customerInsightCard('#f59e0b','Average Order Size',$(avgAov),'Promedio de venta por orden del equipo.',detail('AOV por rep',rK.map(k=>[k,$(current[k].aov)])),"Ventas del representante ÷ cantidad de órdenes únicas.")+
+    customerInsightCard('#06b6d4','Sales per Customer',$(avgSPC),'Ingreso promedio generado por cliente activo.',detail('Venta por cliente',rK.map(k=>[k,$(current[k].salesPerCustomer)])),"Ventas del representante ÷ clientes únicos comprando.")+
+    customerInsightCard('#8b5cf6','Cases per Customer',(rK.length?rK.reduce((s,k)=>s+current[k].casesPerCustomer,0)/rK.length:0).toFixed(1),'Profundidad promedio de cajas por cuenta.',detail('Cajas por cliente',rK.map(k=>[k,current[k].casesPerCustomer.toFixed(1)])),"Cajas vendidas ÷ clientes únicos.")+
+    customerInsightCard('#94a3b8','Customers Visited','N/A','Requiere data de visitas, rutas o CRM.','','Visitados, vendidos y tasa de conversión. Se activará al integrar actividad de campo.',true)+
+    customerInsightCard('#10b981','Customer Retention',prevMonths?P(rK.reduce((s,k)=>s+current[k].retention,0)/Math.max(rK.length,1)):'N/A',prevMonths?'Porcentaje promedio de clientes del período anterior que repitieron.':'No hay período anterior comparable.',prevMonths?detail('Retención por rep',rK.map(k=>[k,P(current[k].retention)])):'',"Clientes que compraron en ambos períodos ÷ clientes del período anterior × 100.",!prevMonths)+
+    customerInsightCard('#ec4899','New vs Lost Customers',prevMonths?`${newVals.reduce((a,b)=>a+b,0)} / ${rK.reduce((s,k)=>s+current[k].lostCustomers,0)}`:'N/A',prevMonths?'Nuevos / perdidos frente al período anterior.':'No hay período anterior comparable.',prevMonths?detail('Movimiento de cartera',rK.map(k=>[k,`+${current[k].newCustomers} / -${current[k].lostCustomers}`])):'',"Nuevo: compra ahora pero no en el período anterior. Perdido: compró antes pero no ahora.",!prevMonths)+
+    customerInsightCard('#F4C124','Portfolio Penetration',avgPen.toFixed(1)+' SKUs','Promedio de SKUs distintos vendidos por representante.',detail('Penetración por rep',rK.map(k=>[k,`${current[k].skuCount} SKUs · ${current[k].brandCount} marcas`])),'Cantidad de SKUs y marcas distintas vendidas por representante en el período.')+
+    customerInsightCard('#3b82f6','Sales Productivity',$(rK.length?rK.reduce((s,k)=>s+current[k].salesPerDay,0)/rK.length:0)+'/día','Venta promedio por día con actividad registrada.',detail('Productividad por rep',rK.map(k=>[k,`${$(current[k].salesPerDay)}/día · ${current[k].activeDays} días`])),'Ventas ÷ días únicos con al menos una factura. No equivale a días trabajados si faltan registros de visita.')+
+    customerInsightCard('#a855f7','Efficiency Score',bestEff?`${current[bestEff].efficiency}/100`:'N/A',bestEff?`${bestEff} lidera el score compuesto.`:'Sin data suficiente.',detail('Score por rep',rK.slice().sort((a,b)=>current[b].efficiency-current[a].efficiency).map(k=>[k,`${current[k].efficiency}/100`])),'Ponderación: ventas 25%, GP 20%, clientes 15%, nuevos 10%, retención 15% y penetración de SKUs 15%.')+
+    customerInsightCard('#ef4444','Revenue at Risk',prevMonths?$(rK.reduce((s,k)=>s+[...prevCustomersByRep[k]].filter(c=>!currentCustomersByRep[k].has(c)).reduce((a,c)=>a+(previous[k]?.sales||0)/Math.max(previous[k]?.customers||1,1),0),0)):'N/A',prevMonths?'Estimado de venta previa asociada a clientes que no repitieron.':'No hay período anterior comparable.','','Estimación: venta promedio previa por cliente del rep × clientes que no repitieron.',!prevMonths);
+
+  const chartCommon={responsive:true,maintainAspectRatio:false,animation:false,resizeDelay:150};
+  mkChart("ch-rep-bar",{type:"bar",data:{labels:rK,datasets:[{label:"Ventas",data:rK.map(k=>current[k].sales),backgroundColor:rK.map((_,i)=>REP_COLORS[i%REP_COLORS.length]),borderRadius:6}]},options:{...xDollar(),...chartCommon,indexAxis:"y",plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`Ventas: ${$(ctx.parsed.x)}`}}}}});
+  mkChart("ch-rep-cases",{type:"bar",data:{labels:rK,datasets:[{label:"Cajas",data:rK.map(k=>current[k].cases),backgroundColor:rK.map((_,i)=>REP_COLORS[i%REP_COLORS.length]+"aa"),borderRadius:6}]},options:{...CD,...chartCommon,indexAxis:"y",plugins:{legend:{display:false}}}});
+  mkChart("ch-rep-profitability",{type:"scatter",data:{datasets:rK.map((k,i)=>({label:k,data:[{x:current[k].sales,y:current[k].margin}],backgroundColor:REP_COLORS[i%REP_COLORS.length],pointRadius:Math.max(5,Math.min(13,5+current[k].gp/Math.max(...gpVals,1)*8)),pointHoverRadius:10}))},options:{...chartCommon,scales:{x:{ticks:{callback:v=>'$'+Number(v).toLocaleString('en-US',{notation:'compact'})},grid:{color:'rgba(255,255,255,.05)'},title:{display:true,text:'Ventas $'}},y:{ticks:{callback:v=>v+'%'},grid:{color:'rgba(255,255,255,.05)'},title:{display:true,text:'Margen %'}}},plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${$(ctx.parsed.x)} · ${P(ctx.parsed.y)}`}}}}});
+  const topTrend=rK.slice(0,6),months=activeMonths(d);
+  mkChart("ch-rep-trend",{type:"line",data:{labels:months.map(m=>MN_SHORT[m]),datasets:topTrend.map((k,i)=>({label:k,data:months.map(m=>current[k].months[m]||0),borderColor:REP_COLORS[i%REP_COLORS.length],backgroundColor:REP_COLORS[i%REP_COLORS.length],tension:.25,pointRadius:2,borderWidth:2}))},options:{...chartCommon,scales:{y:{ticks:{callback:v=>'$'+Number(v).toLocaleString('en-US',{notation:'compact'})},grid:{color:'rgba(255,255,255,.05)'}},x:{grid:{display:false}}},plugins:{legend:{position:'bottom',labels:{boxWidth:10,usePointStyle:true}},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${$(ctx.parsed.y)}`}}}}});
+
+  document.getElementById('sales-ranking').innerHTML=rK.slice().sort((a,b)=>current[b].efficiency-current[a].efficiency).map((k,i)=>{const v=current[k],color=REP_COLORS[i%REP_COLORS.length];return`<div class="sales-rank-card" style="--rank-color:${color}"><div class="sales-rank-top"><div class="sales-rank-name">${i+1}. ${k}</div><div class="sales-rank-score">${v.efficiency}</div></div><div class="sales-progress"><span style="width:${v.efficiency}%"></span></div><div class="sales-rank-meta"><span>Ventas <b>${$(v.sales)}</b></span><span>GP <b>${$(v.gp)}</b></span><span>Retención <b>${prevMonths?P(v.retention):'N/A'}</b></span><span>SKUs <b>${v.skuCount}</b></span></div></div>`;}).join('');
+
+  let rows=rK.map((k,i)=>{const v=current[k],pct=ts?v.sales/ts*100:0,growth=v.growth===null?'N/A':`<span style="color:${v.growth>=0?'var(--green)':'var(--red)'}">${v.growth>=0?'+':''}${P(v.growth)}</span>`;return`<tr><td style="color:#F4C124;font-weight:700">${i+1}</td><td class="bold">${k}</td><td class="r"><span class="pill" style="background:${REP_COLORS[i%REP_COLORS.length]}22;color:${REP_COLORS[i%REP_COLORS.length]}">${v.efficiency}</span></td><td class="r bold">${$(v.sales)}</td><td class="r">${growth}</td><td class="r"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${pct}%"></div></div><span>${P(pct)}</span></div></td><td class="r">${v.cases.toLocaleString()}</td><td class="r">${v.orders}</td><td class="r">${v.customers}</td><td class="r">${$(v.aov)}</td><td class="r">${$(v.salesPerCustomer)}</td><td class="r">${v.casesPerCustomer.toFixed(1)}</td><td class="r">${v.newCustomers}</td><td class="r">${v.lostCustomers}</td><td class="r">${prevMonths?P(v.retention):'N/A'}</td><td class="r">${v.skuCount}</td><td class="r">${v.brandCount}</td><td class="r">${$(v.salesPerDay)}</td><td class="r">${$(v.gp)}</td><td class="r">${mpill(v.margin)}</td></tr>`;}).join("");
+  document.getElementById("tbl-rep").innerHTML=`<thead><tr><th>#</th><th>Representante</th><th class="r">Score${infoIcon("Score de eficiencia relativo: ventas 25%, GP 20%, clientes 15%, nuevos 10%, retención 15% y SKUs 15%.")}</th><th class="r">Ventas $</th><th class="r">Growth${infoIcon("Cambio frente al período anterior comparable.")}</th><th class="r">% Mix</th><th class="r">Cajas</th><th class="r">Órdenes</th><th class="r">Clientes</th><th class="r">AOV${infoIcon("Ventas ÷ órdenes únicas.")}</th><th class="r">Venta/Cliente${infoIcon("Ventas ÷ clientes únicos.")}</th><th class="r">Cajas/Cliente${infoIcon("Cajas ÷ clientes únicos.")}</th><th class="r">Nuevos</th><th class="r">Perdidos</th><th class="r">Retención</th><th class="r">SKUs</th><th class="r">Marcas</th><th class="r">Venta/Día${infoIcon("Ventas ÷ días con al menos una factura registrada.")}</th><th class="r">GP $</th><th class="r">Margen${infoIcon("GP ÷ Ventas de las cuentas de este rep × 100. Verde ≥30% · Amarillo 20-30% · Rojo <20%.")}</th></tr></thead><tbody>${rows}</tbody>`;
 }
 
 
