@@ -2032,8 +2032,9 @@ function renderOverview(){
     },
     options:{
       responsive:true,
+      layout:{padding:{top:24,bottom:6}},
       plugins:{
-        legend:{labels:{color:"#94a3b8",font:{family:"Plus Jakarta Sans",size:12}}},
+        legend:{position:"bottom",labels:{color:"#94a3b8",font:{family:"Plus Jakarta Sans",size:12},padding:18,usePointStyle:true,pointStyle:"circle"}},
         tooltip:{
           padding:10,backgroundColor:"rgba(17,24,39,0.95)",titleColor:"#e2e8f0",bodyColor:"#e2e8f0",borderColor:"#1e2d40",borderWidth:1,
           titleFont:{family:"Plus Jakarta Sans",weight:600},bodyFont:{family:"Plus Jakarta Sans"},
