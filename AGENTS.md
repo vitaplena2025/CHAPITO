@@ -16,6 +16,38 @@ Admin interface:
 
 ---
 
+## Supabase Architecture
+
+CHAPITO depends on two separate Supabase projects. Never confuse their responsibilities.
+
+Primary application database:
+
+- Project name: CHAPITO
+- Project ref: `ejkvymlezbqvzsmwejca`
+- Use for sales, customers, SKUs, companies, upload logs, and market-universe data.
+
+External SKU image source:
+
+- Project name: App de Merchandisers
+- Project ref: `uxdjiqysuurfgfvjxcqg`
+- Use only for product-image storage unless explicitly instructed otherwise.
+- SKU images live in the public `fotos` bucket under `skus/`.
+- Expected object path: `fotos/skus/<normalized-sku>.jpg`.
+
+Normalize SKU image filenames by converting the SKU to lowercase and removing accents or diacritics. Preserve the SKU's remaining characters.
+
+Before changing Supabase data or storage:
+
+- verify the target project
+- verify the target table, bucket, and object path
+- prefer read-only inspection before writes
+- limit changes to the explicitly requested records or objects
+- verify the result after writing
+
+Never commit API keys, database passwords, service-role keys, access tokens, connection strings, or other secrets. Project refs are identifiers and may be documented.
+
+---
+
 ## General Rules
 
 Always preserve existing functionality unless explicitly requested.
