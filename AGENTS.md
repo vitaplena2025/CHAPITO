@@ -48,6 +48,31 @@ Never commit API keys, database passwords, service-role keys, access tokens, con
 
 ---
 
+## Company and SKU Conventions
+
+CHAPITO stores canonical SKU identifiers in `public.skus` and uses the same identifiers when loading `public.sales`.
+
+Hua Xing rules:
+
+- Prefix every Hua Xing source SKU with `HX-`.
+- Preserve the complete source SKU after the prefix, including leading zeros and letters.
+- Example mappings: `001` becomes `HX-001`; `PP206` becomes `HX-PP206`.
+- Store `company = Hua Xing`.
+- Apply the prefix before matching or inserting Hua Xing sales.
+- When product images are provided, use the canonical prefixed SKU in the normalized object filename, for example `fotos/skus/hx-001.jpg`.
+
+Hua Xing sales are handled by the same sellers who handle Vitaplena and may occur at the same points of sale, in different departments, or at additional customers. Before loading transactions:
+
+- match seller names to the existing canonical sales-representative values
+- match Hua Xing customer variants to existing canonical Vitaplena customers when they represent the same point of sale
+- create a new customer only when no canonical match exists
+- retain `Hua Xing` as the transaction company
+- document unmatched customers, sellers, and SKUs before the final load
+
+The initial onboarding record is in `docs/hua-xing-product-onboarding.md`.
+
+---
+
 ## General Rules
 
 Always preserve existing functionality unless explicitly requested.
