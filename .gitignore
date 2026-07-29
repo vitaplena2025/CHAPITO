@@ -22,3 +22,5 @@ node_modules/
 outputs/hua-xing-sales-onboarding/previews/
 outputs/hua-xing-sales-onboarding/*.inspect.ndjson
 outputs/hua-xing-sales-onboarding/~$*
+outputs/hua-xing-sales-onboarding/*.xlsx
+!outputs/hua-xing-sales-onboarding/Hua_Xing_Sales_Onboarding_Audit_Para_Confirmar_Reps.xlsx
