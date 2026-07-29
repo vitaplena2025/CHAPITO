@@ -1125,7 +1125,7 @@ if (typeof ChartDataLabels !== 'undefined') {
 // CONSTANTS
 // ============================================================
 const MN={1:"Enero",2:"Febrero",3:"Marzo",4:"Abril",5:"Mayo",6:"Junio",7:"Julio",8:"Agosto",9:"Septiembre",10:"Octubre",11:"Noviembre",12:"Diciembre"};
-const CHANNEL_COLORS={'Club':'#0071ce','Mass Market':'#ffc220','Supermercados':'#34A852','Specialty Store':'#a855f7','Reposteria':'#ec4899','Restaurantes':'#ef4444','Health Foods':'#10b981','Panadería/Cafetería':'#fb923c','Coffee Shop':'#c084fc','Farmacias':'#3b82f6','Gasolineras':'#06b6d4','Otros':'#64748b','Colmado':'#8b5cf6','Meal Prep':'#f97316'};
+const CHANNEL_COLORS={'Club':'#0071ce','Mass Market':'#ffc220','Supermercados':'#34A852','Specialty Store':'#a855f7','Restaurantes':'#ef4444','Reposteria':'#ec4899','Health Foods':'#10b981','Panadería/Cafetería':'#fb923c','Coffee Shop':'#c084fc','Farmacias':'#3b82f6','Gasolineras':'#06b6d4','Otros':'#64748b','Colmado':'#8b5cf6','Meal Prep':'#f97316','Cash and Carry':'#14b8a6','Procesadora':'#f97316','Sub Distribuidor':'#0ea5e9'};
 const DEPARTMENT_COLORS={'Grocery':'#34A852','Deli':'#F4C124','Food Service':'#ec4899','Retail':'#0ea5e9'};
 const BRAND_COLORS={'Lakanto':'#34A852','Impact':'#6366f1','Palmini':'#f59e0b','Nekstella':'#ec4899','Töst':'#f97316','Green Cola':'#10b981','Unknown':'#475569'};
 const BRAND_LOGOS={
@@ -1154,7 +1154,7 @@ function skuPhoto(sku,size){
   return `<img src="${url}" alt="${sku}" title="${sku}" style="width:${size}px;height:${size}px;object-fit:cover;border-radius:6px;background:rgba(255,255,255,0.05);vertical-align:middle" onerror="this.onerror=null;this.style.visibility='hidden'">`;
 }
 const REP_COLORS=['#34A852','#6366f1','#F4C124','#ec4899','#10b981','#f97316','#a855f7','#06b6d4','#84cc16'];
-const CHANNEL_ORDER=['Club','Mass Market','Supermercados','Specialty Store','Restaurantes','Reposteria','Panadería/Cafetería','Coffee Shop','Health Foods','Farmacias','Gasolineras','Colmado','Meal Prep','Otros'];
+const CHANNEL_ORDER=['Club','Mass Market','Supermercados','Specialty Store','Restaurantes','Reposteria','Panadería/Cafetería','Coffee Shop','Health Foods','Farmacias','Gasolineras','Colmado','Cash and Carry','Procesadora','Sub Distribuidor','Meal Prep','Otros'];
 const COMPANY_COLORS={'Vitaplena':'#34A852','Egg Market':'#F4C124','Hua Xing':'#ec4899'};
 const ANNUAL_GOAL_2026 = 1500000; // Meta anual $1.5M consolidada
 let LOST_THRESHOLD_DAYS = 60; // Umbral de inactividad para Lost Customers: 30 / 60 / 90
@@ -1603,8 +1603,20 @@ function updateHeaderContext(){
 // HELPERS
 // ============================================================
 function activeRows(d){ 
-  // Ventas reales para revenue: normales + credits (excluye voids Y samples)
-  return d.filter(r => !r.is_void && !r.is_sample);
+  // Ventas reales para revenue: normales + credits (excluye voids, samples y órdenes sin impacto)
+  return d.filter(r => !r.is_void && !r.is_sample && !(Number(r.qty)===0 && Number(r.amount)===0));
+}
+function customerCompanyCoverage(){
+  const byCompany={};
+  activeRows(ENRICHED).forEach(r=>{
+    const company=r.company||'Sin compañía';
+    if(!byCompany[company])byCompany[company]=new Set();
+    if(r.customer_name)byCompany[company].add(r.customer_name);
+  });
+  const all=new Set(Object.keys(CUSTOMERS));
+  const vit=byCompany.Vitaplena||new Set(), hua=byCompany['Hua Xing']||new Set();
+  const shared=new Set([...vit].filter(name=>hua.has(name)));
+  return {all,byCompany,vit,hua,shared};
 }
 function voidRows(d){ return d.filter(r => r.is_void); }
 function sampleRows(d){ return d.filter(r => r.is_sample); }
@@ -2170,6 +2182,7 @@ function renderBrands(){
   const totalGp=Object.values(bA).reduce((s,v)=>s+v.gp,0);
   const avgMargin=ts>0?totalGp/ts*100:0;
   const bK=Object.keys(bA).filter(k=>bA[k].sales>0&&k!=='Unknown').sort((a,b)=>bA[b].sales-bA[a].sales);
+  const hasBrandData=activeRows(d).some(r=>r.brand&&r.brand!=='Unknown');
   const top=bK[0]||"";
   const skusVendidos=new Set(activeRows(d).filter(r=>r.sku).map(r=>r.sku)).size;
   const skusTotal=Object.keys(SKUS).length;
@@ -2212,9 +2225,11 @@ function renderBrands(){
   availability.push({name:"Pareto",ok:sK.length>0,reason:sK.length>0?"SKU sales available":"Requires SKU-level sales"});
   availability.push({name:"Concentration",ok:bK.length>0&&sK.length>0,reason:"Brand and SKU sales available"});
   availability.push({name:"Portfolio Gross Margin",ok:hasCostData,reason:hasCostData?"Calculated as total GP / total sales":"Requires landed_cost by SKU"});
+  availability.push({name:"Brand analytics",ok:hasBrandData,reason:hasBrandData?"Brand metadata available":"Requires brand on each SKU"});
+  if(d.some(r=>r.company==='Hua Xing'))availability.push({name:"Hua Xing photos",ok:false,reason:"Requires JPG objects in App de Merchandisers/fotos/skus"});
   const prevPeriod=portfolioPreviousPeriodRows(chanFilter);
   availability.push({name:"Portfolio Matrix",ok:prevPeriod.available,reason:prevPeriod.available?`Comparable period: ${prevPeriod.months.map(m=>MN_SHORT[m]).join(", ")}`:prevPeriod.reason});
-  document.getElementById("portfolio-data-note").innerHTML=`<span class="dot"></span><span>${availability.filter(x=>x.ok).length}/5 KPIs available with current data · ${availability.filter(x=>!x.ok).map(x=>x.name+": "+x.reason).join(" · ")||"All required data is available"}</span>`;
+  document.getElementById("portfolio-data-note").innerHTML=`<span class="dot"></span><span>${availability.filter(x=>x.ok).length}/${availability.length} data checks available · ${availability.filter(x=>!x.ok).map(x=>x.name+": "+x.reason).join(" · ")||"All required data is available"}</span>`;
 
   const expandIcon='<svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>';
   const availableCard=(color,label,value,sub,rows="",info="")=>`<div class="portfolio-insight-card" style="--insight-color:${color}"><div class="portfolio-insight-label"><span>${label}</span>${info?infoIcon(info):""}<span class="portfolio-status">Disponible</span>${rows?`<button type="button" class="portfolio-expand-btn" aria-label="Mostrar detalles de ${label}" aria-expanded="false" onclick="togglePortfolioCard(this)">${expandIcon}</button>`:""}</div><div class="portfolio-insight-value">${value}</div><div class="portfolio-insight-sub">${sub}</div>${rows?`<div class="portfolio-insight-details">${rows}</div>`:""}</div>`;
@@ -2269,7 +2284,9 @@ function renderBrands(){
     if(!skuCustomersSet[r.sku])skuCustomersSet[r.sku]=new Set();
     if(r.customer_name)skuCustomersSet[r.sku].add(r.customer_name);
   });
-  const totalCustomerBase=Object.keys(CUSTOMERS).length;
+  const selectedCompany=document.getElementById("f-company")?.value||"all";
+  const coverage=customerCompanyCoverage();
+  const totalCustomerBase=selectedCompany==='all'?Object.keys(CUSTOMERS).length:(coverage.byCompany[selectedCompany]?.size||0);
 
   let rows=sK.map(k=>{
     const v=sA[k],pct=v.sales/ts*100,sm=SKUS[k]||{},brand=sm.brand||'—',name=sm.item_name||k,bc=BRAND_COLORS[brand]||"#64748b";
@@ -2278,7 +2295,7 @@ function renderBrands(){
     const custPen=totalCustomerBase>0?nCust/totalCustomerBase*100:0;
     return`<tr><td>${skuPhoto(k,30)}</td><td>${brandBadge(brand,20)}</td><td class="bold">${k}</td><td style="font-size:11.5px;color:#94a3b8">${name}</td><td class="r">${v.orders}</td><td class="r">${v.cases.toLocaleString()}</td><td class="r bold">${$(v.sales)}</td><td class="r"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${Math.min(pct*5,100)}%;background:${bc}"></div></div><span>${P(pct)}</span></div></td><td class="r">${$(v.gp)}</td><td class="r">${mpill(v.margin)}</td><td class="r">${nChains}</td><td class="r">${nCust}</td><td class="r">${P(custPen)}</td></tr>`;
   }).join("");
-  document.getElementById("tbl-sku").innerHTML=`<thead><tr><th>Foto</th><th>Marca</th><th>SKU</th><th>Nombre</th><th class="r">Órdenes</th><th class="r">Cajas</th><th class="r">Venta $</th><th class="r">% Mix</th><th class="r">GP $</th><th class="r">Margen${infoIcon("GP ÷ Ventas de este SKU × 100. Verde ≥30% · Amarillo 20-30% · Rojo <20%.")}</th><th class="r"># Cadenas${infoIcon("Cantidad de cadenas distintas que compraron este SKU en el período — mide qué tan distribuido está, no solo cuánto vende. Un SKU concentrado en 1 cadena es más riesgoso que uno repartido en varias.")}</th><th class="r"># Clientes${infoIcon("Cantidad de clientes (localidades) distintos que compraron este SKU en el período.")}</th><th class="r">% Pen. Cartera${infoIcon("# de Clientes que compran este SKU ÷ Total de clientes en la base (261) × 100 — qué porción de toda tu cartera ya compra este producto.")}</th></tr></thead><tbody>${rows}</tbody>`;
+  document.getElementById("tbl-sku").innerHTML=`<thead><tr><th>Foto</th><th>Marca</th><th>SKU</th><th>Nombre</th><th class="r">Órdenes</th><th class="r">Cajas</th><th class="r">Venta $</th><th class="r">% Mix</th><th class="r">GP $</th><th class="r">Margen${infoIcon("GP ÷ Ventas de este SKU × 100. Verde ≥30% · Amarillo 20-30% · Rojo <20%.")}</th><th class="r"># Cadenas${infoIcon("Cantidad de cadenas distintas que compraron este SKU en el período — mide qué tan distribuido está, no solo cuánto vende. Un SKU concentrado en 1 cadena es más riesgoso que uno repartido en varias.")}</th><th class="r"># Clientes${infoIcon("Cantidad de clientes (localidades) distintos que compraron este SKU en el período.")}</th><th class="r">% Pen. Cartera${infoIcon(`# de Clientes que compran este SKU ÷ universo de clientes (${totalCustomerBase}) × 100. El universo cambia según el filtro de compañía: global o clientes con ventas reales de la compañía seleccionada.`)}</th></tr></thead><tbody>${rows}</tbody>`;
 
   // SKUs de alta rotación: mayor cantidad de CAJAS movidas (rotación real, no solo frecuencia de órdenes)
   const topSkus=sK.slice().sort((a,b)=>sA[b].cases-sA[a].cases).slice(0,10);
@@ -2511,6 +2528,12 @@ function renderClients(){
   const ts=Object.values(cA).reduce((s,v)=>s+v.sales,0);
   const totalGp=Object.values(cA).reduce((s,v)=>s+v.gp,0);
   const avgMargin=ts>0?totalGp/ts*100:0;
+  const coverage=customerCompanyCoverage();
+  const companyFilter=document.getElementById("f-company")?.value||"all";
+  const companyCustomers=companyFilter!=="all"?(coverage.byCompany[companyFilter]?.size||0):coverage.all.size;
+  const companyLabel=companyFilter!=="all"?companyFilter:"Todas las compañías";
+  const combinedCustomers=new Set([...coverage.vit,...coverage.hua]);
+  const opportunityCount=companyFilter==='Vitaplena'?[...coverage.vit].filter(name=>!coverage.hua.has(name)).length:companyFilter==='Hua Xing'?[...coverage.hua].filter(name=>!coverage.vit.has(name)).length:[...combinedCustomers].filter(name=>!coverage.shared.has(name)).length;
 
   const cK=Object.keys(cA).filter(k=>cA[k].sales>0).sort((a,b)=>cA[b].sales-cA[a].sales);
   const chK=Object.keys(chA).filter(k=>chA[k].sales>0&&k!=='—').sort((a,b)=>chA[b].sales-chA[a].sales);
@@ -2520,6 +2543,9 @@ function renderClients(){
     <div class="kpi" style="--kpi-color:#34A852"><div class="kpi-label">Canales Activos</div><div class="kpi-value">${cK.length}</div></div>
     <div class="kpi" style="--kpi-color:#6366f1"><div class="kpi-label">Cadenas Activas</div><div class="kpi-value">${chK.length}</div></div>
     <div class="kpi" style="--kpi-color:#F4C124"><div class="kpi-label">Clientes Activos</div><div class="kpi-value">${custK.length}</div></div>
+    <div class="kpi" style="--kpi-color:#0ea5e9"><div class="kpi-label">Universo de Clientes${infoIcon("Total de clientes en public.customers. La cifra por compañía usa clientes con ventas reales registradas; las órdenes con cantidad y monto ambos en cero quedan fuera.")}</div><div class="kpi-value">${companyCustomers}</div><div class="kpi-sub">${companyLabel}</div></div>
+    <div class="kpi" style="--kpi-color:#a855f7"><div class="kpi-label">Cobertura Compartida${infoIcon("Clientes con ventas reales tanto de Vitaplena como de Hua Xing.")}</div><div class="kpi-value">${coverage.shared.size}</div><div class="kpi-sub">Clientes comprados por ambas</div></div>
+    <div class="kpi" style="--kpi-color:#f97316"><div class="kpi-label">Oportunidad entre compañías${infoIcon(companyFilter==='all'?"Clientes que compran solo una de las dos compañías; representan oportunidad de vender la otra.":"Clientes que compran la compañía seleccionada pero todavía no registran ventas de la otra compañía.")}</div><div class="kpi-value">${opportunityCount}</div><div class="kpi-sub">${companyFilter==='all'?'Compran solo una compañía':'No compran la otra compañía'}</div></div>
     <div class="kpi" style="--kpi-color:#ec4899"><div class="kpi-label">Ventas Totales</div><div class="kpi-value">${$(ts)}</div></div>
     <div class="kpi" style="--kpi-color:#10b981"><div class="kpi-label">Margen % Promedio${infoIcon("Ganancia bruta total ÷ ventas totales del canal/cadena/cliente filtrado, ponderado por venta (no es el promedio simple de los % individuales).")}</div><div class="kpi-value">${P(avgMargin)}</div></div>`;
 
