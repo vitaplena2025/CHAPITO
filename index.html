@@ -1362,12 +1362,14 @@ const REP_CANONICAL_MAP={
   'Katherine Nuñez':'María Berríos',
   'Katherine Nunez':'María Berríos'
 };
-function canonicalSalesRep(rep){
+function canonicalSalesRep(rep,chain){
   const name=String(rep||'').trim();
   const normalized=name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+  const normalizedChain=String(chain||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
   if(normalized==='carly perez')return 'Wilfredo Jusino';
   if(normalized==='alberto vega')return 'Wilma Oquendo';
   if(normalized==='katherine nunez')return 'María Berríos';
+  if(normalized==='javier parodi'&&normalizedChain==='supermax')return 'Wilma Oquendo';
   return REP_CANONICAL_MAP[name]||name;
 }
 const CHANNEL_ORDER=['Club','Mass Market','Supermercados','Specialty Store','Restaurantes','Reposteria','Panadería/Cafetería','Coffee Shop','Health Foods','Farmacias','Gasolineras','Colmado','Cash and Carry','Procesadora','Sub Distribuidor','Meal Prep','Otros'];
@@ -1476,7 +1478,7 @@ function enrichData(){
       sku_name: s.item_name || r.sku,
       cogs: cogs,
       gp: amt - cogs,
-      sales_rep: canonicalSalesRep(r.sales_rep),
+      sales_rep: canonicalSalesRep(r.sales_rep,c.chain),
       sales_type: salesType,
       is_void: salesType === 'void',
       is_sample: salesType === 'sample',
