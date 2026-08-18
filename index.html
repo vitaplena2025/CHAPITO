@@ -289,6 +289,21 @@ body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',-app
   margin-left:auto;
 }
 .filter-reset:hover{border-color:var(--red);color:var(--red);}
+.access-controls{display:flex;align-items:center;gap:8px;margin-left:auto;}
+.mode-label{font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.08em;}
+.mode-toggle{display:inline-flex;padding:3px;border:1px solid var(--border-strong);border-radius:9px;background:var(--surface2);}
+.mode-toggle button{border:0;background:transparent;color:var(--text3);padding:6px 10px;border-radius:6px;font:inherit;font-size:11px;font-weight:700;cursor:pointer;}
+.mode-toggle button.active{background:var(--accent);color:#07120a;}
+.mode-toggle button:disabled{opacity:.35;cursor:not-allowed;}
+.filter-group{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.filter-group-label{font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.06em;}
+.filter-group.expert-only{display:none;}
+body.expert-mode .filter-group.expert-only{display:flex;}
+.role-access-note{font-size:10px;color:var(--text3);margin-left:4px;}
+[data-mode="expert"]{display:none!important;}
+body.expert-mode [data-mode="expert"]{display:flex!important;}
+.basic-hidden{display:none!important;}
+.confidential-hidden{display:none!important;}
 
 /* MULTI-SELECT PERIOD (custom dropdown) */
 .multi-select{position:relative;display:inline-block;}
@@ -501,22 +516,24 @@ body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',-app
 <!-- Tabs -->
 <div class="tabs-container">
   <div class="tab active" onclick="showTab('overview')"><span class="tab-icon">📊</span>Executive Scorecard</div>
-  <div class="tab" onclick="showTab('brands')"><span class="tab-icon">📦</span>Portafolio</div>
+  <div class="tab" data-mode="expert" onclick="showTab('brands')"><span class="tab-icon">📦</span>Portafolio</div>
   <div class="tab" onclick="showTab('customers')"><span class="tab-icon">📁</span>Clientes</div>
-  <div class="tab" onclick="showTab('reps')"><span class="tab-icon">👥</span>Equipo de Ventas</div>
+  <div class="tab" data-mode="expert" onclick="showTab('reps')"><span class="tab-icon">👥</span>Equipo de Ventas</div>
   <div class="tab" onclick="showTab('opportunities')"><span class="tab-icon">🎯</span>Oportunidades</div>
   <div class="tab" onclick="showTab('action-plan')"><span class="tab-icon">🧭</span>Plan de Acción</div>
-  <div class="tab" onclick="showTab('reporting')"><span class="tab-icon">⚖️</span>Compare</div>
-  <div class="tab" onclick="showTab('voids')"><span class="tab-icon">🚫</span>Canceladas</div>
+  <div class="tab" data-mode="expert" onclick="showTab('reporting')"><span class="tab-icon">⚖️</span>Compare</div>
+  <div class="tab" data-mode="expert" onclick="showTab('voids')"><span class="tab-icon">🚫</span>Canceladas</div>
 </div>
 
 <!-- Global filters -->
 <div class="filter-bar">
   <span class="filter-label"><span class="dot"></span>Filtros globales</span>
-  <select id="f-company" class="filter-select company" onchange="applyFilters()">
-    <option value="all">🌐 Todas las Compañías</option>
-  </select>
-  <div class="multi-select" id="ms-period">
+  <div class="filter-group">
+    <span class="filter-group-label">Contexto</span>
+    <select id="f-company" class="filter-select company" onchange="applyFilters()">
+      <option value="all">🌐 Todas las Compañías</option>
+    </select>
+    <div class="multi-select" id="ms-period">
     <button type="button" class="ms-trigger" onclick="togglePeriodDropdown(event)">
       <span>📅</span>
       <span id="ms-period-label">Todos los meses</span>
@@ -536,14 +553,27 @@ body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',-app
         <button type="button" class="ms-btn ms-btn-apply" onclick="applyPeriodSelection()">Aplicar</button>
       </div>
     </div>
+    </div>
   </div>
-  <select id="f-rep" class="filter-select" onchange="applyFilters()">
-    <option value="all">👤 Todos los reps</option>
-  </select>
-  <select id="f-chain" class="filter-select" onchange="applyFilters()">
-    <option value="all">🏪 Todas las cadenas</option>
-  </select>
-  <button class="filter-reset" onclick="resetFilters()">✕ Limpiar</button>
+  <div class="filter-group">
+    <span class="filter-group-label">Cobertura</span>
+    <select id="f-rep" class="filter-select" onchange="applyFilters()"><option value="all">👤 Todos los reps</option></select>
+    <select id="f-chain" class="filter-select" onchange="applyFilters()"><option value="all">🏪 Todas las cadenas</option></select>
+  </div>
+  <div class="filter-group expert-only">
+    <span class="filter-group-label">Expert</span>
+    <select id="cf-global-department" class="filter-select" onchange="applyFilters()"><option value="all">Departamento: Todos</option></select>
+    <select id="cf-global-channel" class="filter-select" onchange="applyFilters()"><option value="all">Canal: Todos</option></select>
+  </div>
+  <div class="access-controls">
+    <span class="mode-label">Vista</span>
+    <div class="mode-toggle" role="group" aria-label="Modo de dashboard">
+      <button id="mode-basic" type="button" onclick="setDashboardMode('basic')">Basic</button>
+      <button id="mode-expert" type="button" onclick="setDashboardMode('expert')">Expert</button>
+    </div>
+    <span id="role-access-note" class="role-access-note"></span>
+    <button class="filter-reset" onclick="resetFilters()">✕ Limpiar</button>
+  </div>
 </div>
 
 <!-- ============================================================ -->
@@ -866,7 +896,7 @@ th .info-tip::after{top:auto;bottom:100%;border-top-color:transparent;border-bot
 <div class="content">
   <div class="scorecard-grid" id="kpi-overview"></div>
   <div class="chart-grid chart-grid-6040">
-    <div class="chart-card"><div class="chart-title"><span class="accent-dot"></span>Ventas &amp; Gross Profit por Mes<span class="chart-context" id="monthly-sales-context"></span></div><canvas id="ch-monthly-sales" height="210"></canvas></div>
+    <div class="chart-card"><div class="chart-title"><span class="accent-dot"></span><span id="monthly-sales-title">Ventas &amp; Gross Profit por Mes</span><span class="chart-context" id="monthly-sales-context"></span></div><canvas id="ch-monthly-sales" height="210"></canvas></div>
     <div class="chart-card"><div class="chart-title"><span class="accent-dot"></span>Mix por Canal</div><canvas id="ch-category-pie" height="210"></canvas></div>
   </div>
   <div class="chart-grid chart-grid-2">
@@ -877,7 +907,7 @@ th .info-tip::after{top:auto;bottom:100%;border-top-color:transparent;border-bot
 </div>
 
 <!-- 4. Portafolio (era Marcas & SKUs) -->
-<div id="tab-brands" class="tab-panel">
+<div id="tab-brands" class="tab-panel" data-mode="expert">
 <div class="content">
   <div class="contextual-filters" id="cf-brands">
     <div class="contextual-title"><span class="icon">▸</span>Filtros de Portafolio</div>
@@ -952,7 +982,7 @@ th .info-tip::after{top:auto;bottom:100%;border-top-color:transparent;border-bot
 </div>
 
 <!-- 5. Equipo de Ventas (era Representantes) -->
-<div id="tab-reps" class="tab-panel">
+<div id="tab-reps" class="tab-panel" data-mode="expert">
 <div class="content">
   <div class="kpi-grid" id="kpi-reps"></div>
 
@@ -1132,7 +1162,7 @@ th .info-tip::after{top:auto;bottom:100%;border-top-color:transparent;border-bot
 </div>
 
 <!-- 8. Compare -->
-<div id="tab-reporting" class="tab-panel">
+<div id="tab-reporting" class="tab-panel" data-mode="expert">
 <div class="content">
   <div class="section-header"><div><div class="section-title">Compare</div><div class="section-sub">Analiza una entidad en profundidad o compara hasta cuatro entidades y períodos lado a lado.</div></div></div>
   <div class="reporting-builder" data-mode="analyze">
@@ -1185,7 +1215,7 @@ th .info-tip::after{top:auto;bottom:100%;border-top-color:transparent;border-bot
 </div>
 
 <!-- 8. Canceladas -->
-<div id="tab-voids" class="tab-panel">
+<div id="tab-voids" class="tab-panel" data-mode="expert">
 <div class="content">
   <div class="kpi-grid" id="kpi-voids"></div>
   <div class="section">
@@ -1207,12 +1237,44 @@ const SUPABASE_URL = 'https://ejkvymlezbqvzsmwejca.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVqa3Z5bWxlemJxdnpzbXdlamNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI4MjgwMjgsImV4cCI6MjA5ODQwNDAyOH0.yqcHHIoXg1N4kRXAhFboZ6M3W01cpFAKrvFC1w2AqKc';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let CURRENT_USER=null;
+let CURRENT_ROLE='vendedor';
+let DASHBOARD_MODE='basic';
+let EXPERT_ACCESS=false;
+let PROFITABILITY_ACCESS=false;
 const ROLE_LABELS={admin:'Admin',gerente:'Gerente',vendedor:'Vendedor'};
 function currentRole(user){
   // app_metadata es la fuente prevista para autorización. El correo de administración
   // se mantiene como fallback visual mientras terminamos de configurar ese claim en Auth.
   const role=String(user?.app_metadata?.role||((user?.email||'').toLowerCase()==='admin@vitaplena.pr'?'admin':'vendedor')).toLowerCase();
   return ROLE_LABELS[role]?role:'vendedor';
+}
+function accessProfile(user){
+  const role=currentRole(user), meta=user?.app_metadata||{}, permissions=meta.permissions||{};
+  return {role,expert:role==='admin'||role==='gerente'||permissions.expert===true||permissions.can_use_expert===true,profit:role==='admin'||permissions.can_view_profitability===true};
+}
+function applyProfitabilityVisibility(){
+  const sensitiveIds=['ch-brand-gp-contribution','ch-brand-margin','ch-rep-profitability','ch-portfolio-matrix'];
+  sensitiveIds.forEach(id=>{const el=document.getElementById(id);const card=el?.closest('.chart-card');if(card)card.classList.toggle('confidential-hidden',!PROFITABILITY_ACCESS);});
+  document.querySelectorAll('[data-confidential="profitability"]').forEach(el=>el.classList.toggle('confidential-hidden',!PROFITABILITY_ACCESS));
+  ['gp','margin'].forEach(value=>{const option=document.querySelector(`#report-primary option[value="${value}"]`);if(option)option.disabled=!PROFITABILITY_ACCESS;});
+  const primary=document.getElementById('report-primary');if(primary&&!PROFITABILITY_ACCESS&&['gp','margin'].includes(primary.value)){primary.value='sales';}
+}
+function applyAccessMode(){
+  const expertButton=document.getElementById('mode-expert');
+  if(expertButton)expertButton.disabled=!EXPERT_ACCESS;
+  if(!EXPERT_ACCESS)DASHBOARD_MODE='basic';
+  document.body.classList.toggle('expert-mode',DASHBOARD_MODE==='expert');
+  document.getElementById('mode-basic')?.classList.toggle('active',DASHBOARD_MODE==='basic');
+  document.getElementById('mode-expert')?.classList.toggle('active',DASHBOARD_MODE==='expert');
+  const note=document.getElementById('role-access-note');if(note)note.textContent=`${ROLE_LABELS[CURRENT_ROLE]} · ${PROFITABILITY_ACCESS?'Rentabilidad autorizada':'Vista comercial'}`;
+  applyProfitabilityVisibility();
+  const activeExpert=document.querySelector('.tab.active[data-mode="expert"]');if(activeExpert&&DASHBOARD_MODE!=='expert')showTab('overview');
+}
+function setDashboardMode(mode){
+  if(mode==='expert'&&!EXPERT_ACCESS)return;
+  DASHBOARD_MODE=mode==='expert'?'expert':'basic';
+  applyAccessMode();
+  renderAll();
 }
 function showAuth(message){
   document.getElementById('loading').style.display='none';
@@ -1222,10 +1284,12 @@ function showAuth(message){
 }
 function showDashboard(user){
   CURRENT_USER=user;
+  const profile=accessProfile(user);CURRENT_ROLE=profile.role;EXPERT_ACCESS=profile.expert;PROFITABILITY_ACCESS=profile.profit;
   document.getElementById('auth-screen').style.display='none';
   document.getElementById('loading').style.display='none';
   document.getElementById('app').style.display='block';
   const role=document.getElementById('user-role'); if(role)role.textContent=ROLE_LABELS[currentRole(user)];
+  applyAccessMode();
 }
 async function signIn(event){
   event.preventDefault();
@@ -1288,6 +1352,24 @@ function skuPhoto(sku,size){
   return `<img src="${url}" alt="${sku}" title="${sku}" style="width:${size}px;height:${size}px;object-fit:cover;border-radius:6px;background:rgba(255,255,255,0.05);vertical-align:middle" onerror="this.onerror=null;this.style.visibility='hidden'">`;
 }
 const REP_COLORS=['#34A852','#6366f1','#F4C124','#ec4899','#10b981','#f97316','#a855f7','#06b6d4','#84cc16'];
+// Reasigna vendedores temporales de cobertura a los representantes titulares.
+// Se aplica al cargar la data para que filtros, KPIs, tablas, oportunidades y planes
+// de acción trabajen únicamente con el equipo comercial real.
+const REP_CANONICAL_MAP={
+  'Carly Pérez':'Wilfredo Jusino',
+  'Carly Perez':'Wilfredo Jusino',
+  'Alberto Vega':'Wilma Oquendo',
+  'Katherine Nuñez':'María Berríos',
+  'Katherine Nunez':'María Berríos'
+};
+function canonicalSalesRep(rep){
+  const name=String(rep||'').trim();
+  const normalized=name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+  if(normalized==='carly perez')return 'Wilfredo Jusino';
+  if(normalized==='alberto vega')return 'Wilma Oquendo';
+  if(normalized==='katherine nunez')return 'María Berríos';
+  return REP_CANONICAL_MAP[name]||name;
+}
 const CHANNEL_ORDER=['Club','Mass Market','Supermercados','Specialty Store','Restaurantes','Reposteria','Panadería/Cafetería','Coffee Shop','Health Foods','Farmacias','Gasolineras','Colmado','Cash and Carry','Procesadora','Sub Distribuidor','Meal Prep','Otros'];
 const COMPANY_ORDER=['Egg Market','Hua Xing','Vitaplena'];
 const COMPANY_COLORS={'Vitaplena':'#34A852','Egg Market':'#F4C124','Hua Xing':'#ec4899'};
@@ -1331,7 +1413,8 @@ async function loadData(){
     if(eU)console.warn('chain_market_universe no disponible:',eU.message);
     else universe.forEach(u=>CHAIN_UNIVERSE[u.chain]=u);
 
-    let {data:skus,error:e2}=await sb.from('skus').select('*');
+    const skuColumns=PROFITABILITY_ACCESS?'*':'sku,item_name,brand,case_pack,active,created_at,updated_at,notes,company';
+    let {data:skus,error:e2}=await sb.from('skus').select(skuColumns);
     if(e2)throw e2; skus.forEach(s=>SKUS[s.sku]=s);
 
     SALES=[];let from=0;
@@ -1341,7 +1424,10 @@ async function loadData(){
       SALES=SALES.concat(data);
       if(data.length<1000)break; from+=1000;
     }
-    enrichData(); initFilters(); FILTERED=ENRICHED;
+    enrichData(); initFilters();
+    const assignedRep=CURRENT_USER?.app_metadata?.sales_rep||CURRENT_USER?.user_metadata?.sales_rep;
+    if(CURRENT_ROLE==='vendedor'&&assignedRep){const repSelect=document.getElementById('f-rep');if(repSelect&&[...repSelect.options].some(o=>o.value===assignedRep)){repSelect.value=assignedRep;repSelect.disabled=true;}}
+    FILTERED=ENRICHED;
     document.getElementById('loading').style.display='none';
     document.getElementById('app').style.display='block';
     renderAll();
@@ -1366,7 +1452,7 @@ function enrichData(){
     const isSams = c.chain === "Sam's Club";
     const qtyCases = isSams ? qtyOriginal / SAMS_SU_PER_CASE : qtyOriginal;
     // COGS: con qty ORIGINAL (landed_cost es por SU)
-    const cogs = (s.landed_cost || 0) * qtyOriginal;
+    const cogs = PROFITABILITY_ACCESS ? (s.landed_cost || 0) * qtyOriginal : 0;
     // Determinar sales_type: primero usa el de la BD, si no infiere
     let salesType = r.sales_type;
     if (!salesType){
@@ -1390,6 +1476,7 @@ function enrichData(){
       sku_name: s.item_name || r.sku,
       cogs: cogs,
       gp: amt - cogs,
+      sales_rep: canonicalSalesRep(r.sales_rep),
       sales_type: salesType,
       is_void: salesType === 'void',
       is_sample: salesType === 'sample',
@@ -1409,6 +1496,8 @@ function initFilters(){
   if(egg){egg.disabled=true;egg.classList.add('company-unavailable');egg.textContent='Egg Market (próximamente)';}
   sel('f-rep',[...new Set(ENRICHED.map(r=>r.sales_rep))].filter(x=>x).sort());
   sel('f-chain',[...new Set(ENRICHED.map(r=>r.chain))].filter(x=>x&&x!=='—').sort());
+  sel('cf-global-channel',[...new Set(ENRICHED.map(r=>r.channel))].filter(x=>x).sort());
+  sel('cf-global-department',[...new Set(ENRICHED.map(r=>r.department))].filter(x=>x).sort());
   sel('cf-channel',[...new Set(ENRICHED.map(r=>r.channel))].filter(x=>x).sort());
   sel('cf-brand',[...new Set(ENRICHED.map(r=>r.brand))].filter(x=>x&&x!=='Unknown').sort());
   sel('cf-sku',[...new Set(ENRICHED.map(r=>r.sku))].filter(x=>x).sort());
@@ -1589,6 +1678,8 @@ function applyFilters(){
   const cfBrand=document.getElementById("cf-brand")?.value||"all";
   const cfSku=document.getElementById("cf-sku")?.value||"all";
   const cfStatus=document.getElementById("cf-status")?.value||"all";
+  const globalDepartment=document.getElementById("cf-global-department")?.value||"all";
+  const globalChannel=document.getElementById("cf-global-channel")?.value||"all";
   
   // Month filter: selectedMonths is either "all" or an array of month numbers
   const monthMatches = (rowMonth) => {
@@ -1606,7 +1697,9 @@ function applyFilters(){
     (cfCat==="all"||x.channel===cfCat)&&
     (cfBrand==="all"||x.brand===cfBrand)&&
     (cfSku==="all"||x.sku===cfSku)&&
-    (cfStatus==="all"||x.status===cfStatus)
+    (cfStatus==="all"||x.status===cfStatus)&&
+    (globalDepartment==="all"||x.department===globalDepartment)&&
+    (globalChannel==="all"||x.channel===globalChannel)
   );
   cascadeFilterOptions();
   updateHeaderContext();
@@ -1616,7 +1709,7 @@ function applyFilters(){
 // Cascade: actualiza las opciones de cada dropdown basado en TODOS los otros filtros seleccionados
 function cascadeFilterOptions(){
   const getVal=id=>document.getElementById(id)?.value||"all";
-  const co=getVal("f-company"),r=getVal("f-rep"),ch=getVal("f-chain");
+  const co=getVal("f-company"),r=getVal("f-rep"),ch=getVal("f-chain"),globalDepartment=getVal("cf-global-department"),globalChannel=getVal("cf-global-channel");
   const cfChan=getVal("cf-department"),cfCat=getVal("cf-channel"),cfBrand=getVal("cf-brand"),cfSku=getVal("cf-sku"),cfStatus=getVal("cf-status");
   
   // Function: filter ENRICHED by all filters EXCEPT the one we're computing options for
@@ -1626,6 +1719,8 @@ function cascadeFilterOptions(){
       (excludeId==="f-month"||selectedMonths==="all"||(Array.isArray(selectedMonths)&&selectedMonths.includes(x.month)))&&
       (excludeId==="f-rep"||r==="all"||x.sales_rep===r)&&
       (excludeId==="f-chain"||ch==="all"||x.chain===ch)&&
+      (excludeId==="cf-global-department"||globalDepartment==="all"||x.department===globalDepartment)&&
+      (excludeId==="cf-global-channel"||globalChannel==="all"||x.channel===globalChannel)&&
       (excludeId==="cf-department"||cfChan==="all"||x.department===cfChan)&&
       (excludeId==="cf-channel"||cfCat==="all"||x.channel===cfCat)&&
       (excludeId==="cf-brand"||cfBrand==="all"||x.brand===cfBrand)&&
@@ -1666,6 +1761,8 @@ function cascadeFilterOptions(){
   updateSelect("f-company",[...new Set(subsetExcept("f-company").map(r=>r.company))],"🌐 Todas las Compañías");
   updateSelect("f-rep",[...new Set(subsetExcept("f-rep").map(r=>r.sales_rep))].filter(x=>x).sort(),"👤 Todos los reps");
   updateSelect("f-chain",[...new Set(subsetExcept("f-chain").map(r=>r.chain))].filter(x=>x&&x!=='—').sort(),"🏪 Todas las cadenas");
+  updateSelect("cf-global-department",[...new Set(subsetExcept("cf-global-department").map(r=>r.department))].filter(x=>x).sort(),"Departamento: Todos");
+  updateSelect("cf-global-channel",[...new Set(subsetExcept("cf-global-channel").map(r=>r.channel))].filter(x=>x).sort(),"Canal: Todos");
   
   // Month cascade: actualizar el multi-select con los meses disponibles según los otros filtros
   const monthsAvail=[...new Set(subsetExcept("f-month").map(r=>r.month))].filter(x=>x).sort((a,b)=>a-b);
@@ -1697,7 +1794,7 @@ function cascadeFilterOptions(){
 }
 
 function resetFilters(){
-  ["f-company","f-rep","f-chain","cf-department","cf-channel","cf-brand","cf-sku","cf-status","cf-activity","cf-portfolio-channel"].forEach(id=>{const el=document.getElementById(id);if(el)el.value="all";});
+  ["f-company","f-rep","f-chain","cf-global-department","cf-global-channel","cf-department","cf-channel","cf-brand","cf-sku","cf-status","cf-activity","cf-portfolio-channel"].forEach(id=>{const el=document.getElementById(id);if(el)el.value="all";});
   selectedMonths = "all";
   pendingSelectedMonths = "all";
   updatePeriodLabel();
@@ -1794,7 +1891,9 @@ function otherFilterValues(){
     cfCat: document.getElementById("cf-channel")?.value||"all",
     cfBrand: document.getElementById("cf-brand")?.value||"all",
     cfSku: document.getElementById("cf-sku")?.value||"all",
-    cfStatus: document.getElementById("cf-status")?.value||"all"
+    cfStatus: document.getElementById("cf-status")?.value||"all",
+    globalDepartment: document.getElementById("cf-global-department")?.value||"all",
+    globalChannel: document.getElementById("cf-global-channel")?.value||"all"
   };
 }
 function rowsForMonths(monthsArr){
@@ -1808,7 +1907,9 @@ function rowsForMonths(monthsArr){
     (f.cfCat==="all"||x.channel===f.cfCat)&&
     (f.cfBrand==="all"||x.brand===f.cfBrand)&&
     (f.cfSku==="all"||x.sku===f.cfSku)&&
-    (f.cfStatus==="all"||x.status===f.cfStatus)
+    (f.cfStatus==="all"||x.status===f.cfStatus)&&
+    (f.globalDepartment==="all"||x.department===f.globalDepartment)&&
+    (f.globalChannel==="all"||x.channel===f.globalChannel)
   ));
 }
 function customersActiveInMonths(monthsArr){ return new Set(rowsForMonths(monthsArr).map(r=>r.customer_name)); }
@@ -2023,6 +2124,7 @@ function scPlaceholder(o){
 // RENDERERS
 // ============================================================
 function renderOverview(){
+  const salesTitle=document.getElementById('monthly-sales-title');if(salesTitle)salesTitle.innerHTML=PROFITABILITY_ACCESS?'Ventas &amp; Gross Profit por Mes':'Ventas por Mes';
   const d=activeRows(FILTERED),months=activeMonths(FILTERED);
   const ts=d.reduce((s,r)=>s+r.amount,0),tc=d.reduce((s,r)=>s+r.qty,0),tg=d.reduce((s,r)=>s+r.gp,0);
   const mg=ts>0?tg/ts*100:0;
@@ -2061,7 +2163,7 @@ function renderOverview(){
   
   // ---- Series mensuales para sparklines (\u00faltimos meses del per\u00edodo) ----
   const seriesSales=months.map(m=>d.filter(r=>r.month===m).reduce((s,r)=>s+r.amount,0));
-  const seriesGP=months.map(m=>d.filter(r=>r.month===m).reduce((s,r)=>s+r.gp,0));
+  const seriesGP=PROFITABILITY_ACCESS?months.map(m=>d.filter(r=>r.month===m).reduce((s,r)=>s+r.gp,0)):months.map(()=>0);
   const seriesMargin=seriesSales.map((s,i)=>s>0?seriesGP[i]/s*100:null);
   const seriesCust=months.map(m=>new Set(d.filter(r=>r.month===m).map(r=>r.customer_name)).size);
 
@@ -2114,14 +2216,13 @@ function renderOverview(){
         + scSegment("MoM", momPct==null?"—":(momPct>=0?"+":"")+momPct.toFixed(1)+"%", {tone:momPct==null?"neutral":momPct>=0?"up":"down", info:"% de cambio en ventas del último mes del período vs. el mes inmediatamente anterior."})
         + scSegment("Venta Diaria Prom.", avgDailySales==null?"—":kFmt(avgDailySales), {info:"Ventas totales del período ÷ días calendario entre la primera y la última fecha con venta."})
     }),
-    // 2. Gross Margin
-    scCard({icon:SC_ICONS.margin,color:"#6366f1",title:"Gross Margin",
+    ...(PROFITABILITY_ACCESS?[scCard({icon:SC_ICONS.margin,color:"#6366f1",title:"Gross Margin",
       info:"Gross Profit ÷ Ventas Netas × 100, del período filtrado.",
       value:P(mg), sub:`GP ${kFmt(tg)}`,
       mom:scDelta(marginMom,"MoM",{pp:true}), yoy:scDelta(null,"YoY"),
       segments: scSegment("vs. Período Ant.", marginMom==null?"—":(marginMom>=0?"+":"")+marginMom.toFixed(1)+"pp", {tone:marginMom==null?"neutral":marginMom>=0?"up":"down", info:"Diferencia en puntos porcentuales vs. el margen del mes anterior."})
         + scSegment(`vs. Meta (${MARGIN_TARGET}%)`, (marginVsTarget>=0?"+":"")+marginVsTarget.toFixed(1)+"pp", {tone:marginVsTarget>=0?"up":"down", info:"Diferencia vs. 30% — el mismo umbral que usa todo el dashboard para marcar margen saludable en verde."})
-    }),
+    })]:[]),
     // 3. Active Customers
     scCard({icon:SC_ICONS.customers,color:"#10b981",title:"Active Customers",
       info:"Clientes únicos con al menos 1 venta activa dentro del período filtrado.",
@@ -2168,7 +2269,7 @@ function renderOverview(){
   const avgSales=months.length?mS.reduce((s,v)=>s+v,0)/months.length:0;
   const avgGp=months.length?mG.reduce((s,v)=>s+v,0)/months.length:0;
   const setChartContext=(id,text)=>{const el=document.getElementById(id);if(el)el.textContent=text;};
-  setChartContext("monthly-sales-context",months.length?`Promedio visible: ${kFmt(avgSales)} ventas · ${kFmt(avgGp)} GP`:"");
+  setChartContext("monthly-sales-context",months.length?(PROFITABILITY_ACCESS?`Promedio visible: ${kFmt(avgSales)} ventas · ${kFmt(avgGp)} GP`:`Promedio visible: ${kFmt(avgSales)} ventas`):"");
   // Calcular Growth Rate por mes (para línea + datalabels)
   const growthRates = months.map((m,i) => {
     if (i === 0) return null;
@@ -2183,12 +2284,14 @@ function renderOverview(){
       datasets:[
         {label:"Ventas",data:mS,backgroundColor:"rgba(52,168,82,.85)",borderRadius:7,yAxisID:"y",order:2,
          datalabels:{display:true,anchor:"end",align:"end",color:"#ffffff",font:{family:"Plus Jakarta Sans",weight:"600",size:11},formatter:v=>"$"+(v/1000).toFixed(1)+"K"}},
-        {label:"GP",data:mG,backgroundColor:"rgba(99,102,241,.85)",borderRadius:7,yAxisID:"y",order:3,
+        ...(PROFITABILITY_ACCESS?[{label:"GP",data:mG,backgroundColor:"rgba(99,102,241,.85)",borderRadius:7,yAxisID:"y",order:3,
          datalabels:{display:true,anchor:"end",align:"end",color:"#ffffff",font:{family:"Plus Jakarta Sans",weight:"600",size:11},formatter:v=>"$"+(v/1000).toFixed(1)+"K"}},
+        ]:[]),
         {label:"Promedio ventas",data:months.map(()=>avgSales),type:"line",borderColor:"rgba(52,168,82,.95)",borderDash:[7,5],borderWidth:2,pointRadius:0,yAxisID:"y",order:4,
          datalabels:{display:false}},
-        {label:"Promedio GP",data:months.map(()=>avgGp),type:"line",borderColor:"rgba(129,140,248,.95)",borderDash:[4,5],borderWidth:2,pointRadius:0,yAxisID:"y",order:5,
+        ...(PROFITABILITY_ACCESS?[{label:"Promedio GP",data:months.map(()=>avgGp),type:"line",borderColor:"rgba(129,140,248,.95)",borderDash:[4,5],borderWidth:2,pointRadius:0,yAxisID:"y",order:5,
          datalabels:{display:false}},
+        ]:[]),
         {label:"Growth MoM",data:growthRates,type:"line",borderColor:"#F4C124",backgroundColor:"rgba(244,193,36,0.15)",tension:0.3,yAxisID:"y1",order:1,pointRadius:6,pointBackgroundColor:"#F4C124",pointBorderColor:"#0a0e1a",pointBorderWidth:2,borderWidth:3,
          datalabels:{display:true,anchor:"top",align:"top",color:"#F4C124",font:{family:"Plus Jakarta Sans",weight:"700",size:11},formatter:v=>v===null?"":(v>=0?"+":"")+v.toFixed(1)+"%"}}
       ]
@@ -2345,7 +2448,7 @@ function renderBrands(){
   document.getElementById("kpi-brands").innerHTML=`
     <div class="kpi" style="--kpi-color:#34A852"><div class="kpi-label">Marcas Activas</div><div class="kpi-value">${bK.length}</div></div>
     <div class="kpi" style="--kpi-color:#6366f1"><div class="kpi-label">#1 Marca</div><div class="kpi-value" style="font-size:18px;display:flex;align-items:center;gap:8px">${top?brandBadge(top,26):""}</div><div class="kpi-sub">${$(bA[top]?.sales||0)}</div></div>
-    <div class="kpi" style="--kpi-color:${mc(avgMargin)}"><div class="kpi-label">Portfolio Gross Margin${infoIcon("Mide la rentabilidad real del portafolio filtrado. Fórmula: Gross Profit total ÷ Ventas netas totales × 100. Está ponderado automáticamente por el valor vendido; no es un promedio simple entre los márgenes de las marcas o SKUs. Verde ≥30% · Amarillo 20–29.9% · Rojo <20%.")}</div><div class="kpi-value">${P(avgMargin)}</div><div class="kpi-sub">GP ${kFmt(totalGp)} sobre ${kFmt(ts)} vendidos</div><div style="margin-top:8px"><span class="kpi-badge ${avgMargin>=30?'badge-green':avgMargin>=20?'badge-yellow':'badge-red'}">${avgMargin>=30?'Excellent':avgMargin>=20?'Healthy':'Low Margin'}</span></div></div>
+    ${PROFITABILITY_ACCESS?`<div class="kpi" style="--kpi-color:${mc(avgMargin)}"><div class="kpi-label">Portfolio Gross Margin${infoIcon("Mide la rentabilidad real del portafolio filtrado. Fórmula: Gross Profit total ÷ Ventas netas totales × 100.")}</div><div class="kpi-value">${P(avgMargin)}</div><div class="kpi-sub">GP ${kFmt(totalGp)} sobre ${kFmt(ts)} vendidos</div><div style="margin-top:8px"><span class="kpi-badge ${avgMargin>=30?'badge-green':avgMargin>=20?'badge-yellow':'badge-red'}">${avgMargin>=30?'Excellent':avgMargin>=20?'Healthy':'Low Margin'}</span></div></div>`:''}
     <div class="kpi" style="--kpi-color:#8b5cf6"><div class="kpi-label">SKUs Vendidos${infoIcon("SKUs con al menos 1 venta en el período filtrado ÷ Total de SKUs en el catálogo — qué porción de tu portafolio realmente se movió.")}</div><div class="kpi-value">${skusVendidos}/${skusTotal}</div><div class="kpi-sub">${P(skuPct)} del catálogo</div></div>
     <div class="kpi" style="--kpi-color:#ec4899"><div class="kpi-label">Ventas Totales</div><div class="kpi-value">${$(ts)}</div></div>`;
 
@@ -3101,6 +3204,7 @@ const TABS={overview:renderOverview,brands:renderBrands,reps:renderReps,customer
 const TAB_LIST=["overview","brands","customers","reps","opportunities","action-plan","reporting","voids"];
 let activeTab="overview";
 function showTab(name){
+  if(['brands','reps','reporting','voids'].includes(name)&&(!EXPERT_ACCESS||DASHBOARD_MODE!=='expert')){name='overview';}
   document.querySelectorAll(".tab-panel").forEach(p=>p.classList.remove("active"));
   document.querySelectorAll(".tab").forEach((t,i)=>t.classList.toggle("active",TAB_LIST[i]===name));
   document.getElementById("tab-"+name).classList.add("active");
