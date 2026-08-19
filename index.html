@@ -517,7 +517,7 @@ body.expert-mode [data-mode="expert"]{display:flex!important;}
 <div class="tabs-container">
   <div class="tab active" onclick="showTab('overview')"><span class="tab-icon">📊</span>Executive Scorecard</div>
   <div class="tab" data-mode="expert" onclick="showTab('brands')"><span class="tab-icon">📦</span>Portafolio</div>
-  <div class="tab" onclick="showTab('customers')"><span class="tab-icon">📁</span>Clientes</div>
+  <div class="tab" id="tab-nav-customers" onclick="showTab('customers')"><span class="tab-icon">📁</span><span class="tab-label">Clientes</span></div>
   <div class="tab" data-mode="expert" onclick="showTab('reps')"><span class="tab-icon">👥</span>Equipo de Ventas</div>
   <div class="tab" onclick="showTab('opportunities')"><span class="tab-icon">🎯</span>Oportunidades</div>
   <div class="tab" onclick="showTab('action-plan')"><span class="tab-icon">🧭</span>Plan de Acción</div>
@@ -584,6 +584,30 @@ body.expert-mode [data-mode="expert"]{display:flex!important;}
 .tab-panel{display:none;animation:fadeIn 0.22s ease;}
 .tab-panel.active{display:block;}
 @keyframes fadeIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
+.seller-basic-view{padding-top:22px;}
+.seller-basic-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:18px;}
+.seller-basic-head h2{margin:0;font-size:22px;letter-spacing:-.3px;}
+.seller-basic-head p{margin:5px 0 0;color:var(--text2);font-size:12px;}
+.seller-basic-controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;}
+.seller-basic-controls .filter-select{min-width:150px;}
+.seller-basic-kpis{grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:18px;}
+.seller-basic-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:18px;align-items:start;}
+.seller-basic-card{min-width:0;}
+.seller-basic-card .section-header{margin-bottom:10px;}
+.seller-basic-table{font-size:11px;min-width:720px!important;}
+.seller-basic-table th{white-space:nowrap;cursor:pointer;user-select:none;}
+.seller-basic-table th:hover{color:#fff;}
+.seller-basic-table td{vertical-align:middle;}
+.seller-basic-table .sort-indicator{color:#86efac;font-size:10px;margin-left:3px;}
+.seller-basic-search{width:100%;margin-bottom:10px;}
+.seller-basic-list{display:grid;gap:8px;}
+.seller-basic-list-item{display:flex;justify-content:space-between;gap:10px;padding:10px 11px;border:1px solid var(--border);border-radius:9px;background:rgba(255,255,255,.025);}
+.seller-basic-list-item strong{font-size:11px;display:block;}
+.seller-basic-list-item span{font-size:10px;color:var(--text2);display:block;margin-top:3px;}
+.seller-basic-list-item .r{text-align:right;white-space:nowrap;color:#fbbf24;font-weight:700;font-size:11px;}
+.seller-basic-empty{padding:24px;text-align:center;color:var(--text3);border:1px dashed var(--border-strong);border-radius:10px;}
+@media(max-width:900px){.seller-basic-grid{grid-template-columns:1fr;}.seller-basic-head{flex-direction:column;}.seller-basic-controls{justify-content:flex-start;}.seller-basic-kpis{grid-template-columns:repeat(2,minmax(0,1fr));}}
+@media(max-width:560px){.seller-basic-kpis{grid-template-columns:1fr 1fr;}.seller-basic-controls{display:grid;grid-template-columns:1fr 1fr;width:100%;}.seller-basic-controls .filter-select{min-width:0;width:100%;}}
 
 /* KPI CARDS */
 .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:22px;}
@@ -1013,7 +1037,8 @@ th .info-tip::after{top:auto;bottom:100%;border-top-color:transparent;border-bot
 
 <!-- 6. Clientes (consolidado: Canal + Cadena + Cliente) -->
 <div id="tab-customers" class="tab-panel">
-<div class="content">
+<div id="seller-basic-view" class="content seller-basic-view" style="display:none"></div>
+<div id="customer-advanced-view" class="content">
   <div class="contextual-filters" id="cf-customers">
     <div class="contextual-title"><span class="icon">▸</span>Filtros de Clientes</div>
     <div class="contextual-selects">
@@ -1252,6 +1277,24 @@ function accessProfile(user){
   const role=currentRole(user), meta=user?.app_metadata||{}, permissions=meta.permissions||{};
   return {role,expert:role==='admin'||role==='gerente'||permissions.expert===true||permissions.can_use_expert===true,profit:role==='admin'||permissions.can_view_profitability===true};
 }
+function assignedSalesRep(){
+  if(CURRENT_ROLE!=='vendedor')return null;
+  const assigned=CURRENT_USER?.app_metadata?.sales_rep;
+  return assigned?canonicalSalesRep(assigned):null;
+}
+function repAllowed(row,selectedRep='all'){
+  const assigned=assignedSalesRep();
+  if(CURRENT_ROLE==='vendedor')return Boolean(assigned)&&row.sales_rep===assigned;
+  return selectedRep==='all'||row.sales_rep===selectedRep;
+}
+function enforceSellerRepFilter(){
+  const select=document.getElementById('f-rep');
+  const assigned=assignedSalesRep();
+  if(CURRENT_ROLE==='vendedor'&&select){
+    select.value=assigned||'__unassigned__';
+    select.disabled=true;
+  }
+}
 function applyProfitabilityVisibility(){
   const sensitiveIds=['ch-brand-gp-contribution','ch-brand-margin','ch-rep-profitability','ch-portfolio-matrix'];
   sensitiveIds.forEach(id=>{const el=document.getElementById(id);const card=el?.closest('.chart-card');if(card)card.classList.toggle('confidential-hidden',!PROFITABILITY_ACCESS);});
@@ -1267,6 +1310,7 @@ function applyAccessMode(){
   document.getElementById('mode-basic')?.classList.toggle('active',DASHBOARD_MODE==='basic');
   document.getElementById('mode-expert')?.classList.toggle('active',DASHBOARD_MODE==='expert');
   const note=document.getElementById('role-access-note');if(note)note.textContent=`${ROLE_LABELS[CURRENT_ROLE]} · ${PROFITABILITY_ACCESS?'Rentabilidad autorizada':'Vista comercial'}`;
+  const customerTabLabel=document.querySelector('#tab-nav-customers .tab-label');if(customerTabLabel)customerTabLabel.textContent=CURRENT_ROLE==='vendedor'&&DASHBOARD_MODE==='basic'?'Mi desempeño':'Clientes';
   applyProfitabilityVisibility();
   const activeExpert=document.querySelector('.tab.active[data-mode="expert"]');if(activeExpert&&DASHBOARD_MODE!=='expert')showTab('overview');
 }
@@ -1325,7 +1369,7 @@ if (typeof ChartDataLabels !== 'undefined') {
 const MN={1:"Enero",2:"Febrero",3:"Marzo",4:"Abril",5:"Mayo",6:"Junio",7:"Julio",8:"Agosto",9:"Septiembre",10:"Octubre",11:"Noviembre",12:"Diciembre"};
 const CHANNEL_COLORS={'Club':'#0071ce','Mass Market':'#ffc220','Supermercados':'#34A852','Specialty Store':'#a855f7','Restaurantes':'#ef4444','Reposteria':'#ec4899','Health Foods':'#10b981','Panadería/Cafetería':'#fb923c','Coffee Shop':'#c084fc','Farmacias':'#3b82f6','Gasolineras':'#06b6d4','Otros':'#64748b','Colmado':'#8b5cf6','Meal Prep':'#f97316','Cash and Carry':'#14b8a6','Procesadora':'#f97316','Sub Distribuidor':'#0ea5e9'};
 const DEPARTMENT_COLORS={'Grocery':'#34A852','Deli':'#F4C124','Food Service':'#ec4899','Retail':'#0ea5e9'};
-const BRAND_COLORS={'Lakanto':'#34A852','Impact':'#6366f1','Palmini':'#f59e0b','Nekstella':'#ec4899','Töst':'#f97316','Green Cola':'#10b981','Unknown':'#475569'};
+const BRAND_COLORS={'Lakanto':'#34A852','Impact':'#6366f1','Palmini':'#f59e0b','Nekstella':'#ec4899','Töst':'#f97316','Green Cola':'#10b981','Briannas':'#e11d48','BUONO':'#f59e0b','Dulzura':'#a855f7','Huevos':'#38bdf8','Unknown':'#475569'};
 const BRAND_LOGOS={
   'Töst': 'https://ejkvymlezbqvzsmwejca.supabase.co/storage/v1/object/public/brand-logos/Tost.png',
   'Lakanto': 'https://ejkvymlezbqvzsmwejca.supabase.co/storage/v1/object/public/brand-logos/Lakanto.png',
@@ -1359,6 +1403,7 @@ const REP_CANONICAL_MAP={
   'Carly Pérez':'Wilfredo Jusino',
   'Carly Perez':'Wilfredo Jusino',
   'Alberto Vega':'Wilma Oquendo',
+  'Luis Daniel (deleted)':'Luis Daniel',
   'Katherine Nuñez':'María Berríos',
   'Katherine Nunez':'María Berríos'
 };
@@ -1426,10 +1471,11 @@ async function loadData(){
       SALES=SALES.concat(data);
       if(data.length<1000)break; from+=1000;
     }
+    restrictLoadedDataToSeller();
     enrichData(); initFilters();
-    const assignedRep=CURRENT_USER?.app_metadata?.sales_rep||CURRENT_USER?.user_metadata?.sales_rep;
-    if(CURRENT_ROLE==='vendedor'&&assignedRep){const repSelect=document.getElementById('f-rep');if(repSelect&&[...repSelect.options].some(o=>o.value===assignedRep)){repSelect.value=assignedRep;repSelect.disabled=true;}}
+    enforceSellerRepFilter();
     FILTERED=ENRICHED;
+    applyFilters();
     document.getElementById('loading').style.display='none';
     document.getElementById('app').style.display='block';
     renderAll();
@@ -1439,6 +1485,17 @@ async function loadData(){
     const b=document.getElementById('error-banner');
     b.style.display='block'; b.textContent='Error cargando datos: '+(err.message||err);
   }
+}
+
+function restrictLoadedDataToSeller(){
+  if(CURRENT_ROLE!=='vendedor')return;
+  const assigned=assignedSalesRep();
+  if(!assigned){SALES=[];CUSTOMERS={};SKUS={};return;}
+  SALES=SALES.filter(row=>canonicalSalesRep(row.sales_rep,CUSTOMERS[row.customer_name]?.chain)===assigned);
+  const customerNames=new Set(SALES.map(row=>row.customer_name).filter(Boolean));
+  CUSTOMERS=Object.fromEntries(Object.entries(CUSTOMERS).filter(([name])=>customerNames.has(name)));
+  const skuKeys=new Set(SALES.map(row=>row.sku).filter(Boolean));
+  SKUS=Object.fromEntries(Object.entries(SKUS).filter(([sku])=>skuKeys.has(sku)));
 }
 
 // Constante: conversión Sam's Club (SU → cases/trays)
@@ -1494,8 +1551,6 @@ function enrichData(){
 function initFilters(){
   const sel=(id,arr,pfx='')=>{const el=document.getElementById(id);arr.forEach(v=>{const o=document.createElement("option");o.value=v;o.textContent=(pfx||'')+v;el.appendChild(o);});};
   sel('f-company',COMPANIES);
-  const egg=document.querySelector('#f-company option[value="Egg Market"]');
-  if(egg){egg.disabled=true;egg.classList.add('company-unavailable');egg.textContent='Egg Market (próximamente)';}
   sel('f-rep',[...new Set(ENRICHED.map(r=>r.sales_rep))].filter(x=>x).sort());
   sel('f-chain',[...new Set(ENRICHED.map(r=>r.chain))].filter(x=>x&&x!=='—').sort());
   sel('cf-global-channel',[...new Set(ENRICHED.map(r=>r.channel))].filter(x=>x).sort());
@@ -1672,6 +1727,7 @@ document.addEventListener("click", e => {
 });
 
 function applyFilters(){
+  enforceSellerRepFilter();
   const co=document.getElementById("f-company").value;
   const r=document.getElementById("f-rep").value;
   const ch=document.getElementById("f-chain").value;
@@ -1693,7 +1749,7 @@ function applyFilters(){
   FILTERED=ENRICHED.filter(x=>
     (co==="all"||x.company===co)&&
     monthMatches(x.month)&&
-    (r==="all"||x.sales_rep===r)&&
+    repAllowed(x,r)&&
     (ch==="all"||x.chain===ch)&&
     (cfChan==="all"||x.department===cfChan)&&
     (cfCat==="all"||x.channel===cfCat)&&
@@ -1719,7 +1775,7 @@ function cascadeFilterOptions(){
     return ENRICHED.filter(x=>
       (excludeId==="f-company"||co==="all"||x.company===co)&&
       (excludeId==="f-month"||selectedMonths==="all"||(Array.isArray(selectedMonths)&&selectedMonths.includes(x.month)))&&
-      (excludeId==="f-rep"||r==="all"||x.sales_rep===r)&&
+      repAllowed(x,r)&&
       (excludeId==="f-chain"||ch==="all"||x.chain===ch)&&
       (excludeId==="cf-global-department"||globalDepartment==="all"||x.department===globalDepartment)&&
       (excludeId==="cf-global-channel"||globalChannel==="all"||x.channel===globalChannel)&&
@@ -1747,8 +1803,7 @@ function cascadeFilterOptions(){
     const values=id==='f-company'?orderCompanies([...COMPANY_ORDER,...validValues]):validValues;
     values.forEach(v=>{
       const o=document.createElement("option");
-      o.value=v;o.textContent=id==='f-company'&&v==='Egg Market'?'Egg Market (próximamente)':v;
-      if(id==='f-company'&&v==='Egg Market'){o.disabled=true;o.classList.add('company-unavailable');}
+      o.value=v;o.textContent=v;
       el.appendChild(o);
     });
     // Restaurar selección si sigue válida, si no volver a "all"
@@ -1799,6 +1854,7 @@ function resetFilters(){
   ["f-company","f-rep","f-chain","cf-global-department","cf-global-channel","cf-department","cf-channel","cf-brand","cf-sku","cf-status","cf-activity","cf-portfolio-channel"].forEach(id=>{const el=document.getElementById(id);if(el)el.value="all";});
   selectedMonths = "all";
   pendingSelectedMonths = "all";
+  enforceSellerRepFilter();
   updatePeriodLabel();
   updateDropdownVisualState();
   FILTERED=ENRICHED;
@@ -1856,9 +1912,12 @@ function customerCompanyCoverage(){
     if(r.customer_name)byCompany[company].add(r.customer_name);
   });
   const all=new Set(Object.keys(CUSTOMERS));
-  const vit=byCompany.Vitaplena||new Set(), hua=byCompany['Hua Xing']||new Set();
-  const shared=new Set([...vit].filter(name=>hua.has(name)));
-  return {all,byCompany,vit,hua,shared};
+  const vit=byCompany.Vitaplena||new Set(), hua=byCompany['Hua Xing']||new Set(), egg=byCompany['Egg Market']||new Set();
+  const companies=['Vitaplena','Hua Xing','Egg Market'];
+  const companyCountByCustomer=new Map();
+  companies.forEach(company=>(byCompany[company]||new Set()).forEach(name=>companyCountByCustomer.set(name,(companyCountByCustomer.get(name)||0)+1)));
+  const shared=new Set([...companyCountByCustomer].filter(([,count])=>count>=2).map(([name])=>name));
+  return {all,byCompany,vit,hua,egg,shared,companies,companyCountByCustomer};
 }
 function voidRows(d){ return d.filter(r => r.is_void); }
 function sampleRows(d){ return d.filter(r => r.is_sample); }
@@ -1887,7 +1946,7 @@ function activeMonths(d){return[...new Set(activeRows(d).map(r=>r.month))].sort(
 function otherFilterValues(){
   return {
     co: document.getElementById("f-company")?.value||"all",
-    r: document.getElementById("f-rep")?.value||"all",
+    r: assignedSalesRep()||document.getElementById("f-rep")?.value||"all",
     ch: document.getElementById("f-chain")?.value||"all",
     cfChan: document.getElementById("cf-department")?.value||"all",
     cfCat: document.getElementById("cf-channel")?.value||"all",
@@ -1903,7 +1962,7 @@ function rowsForMonths(monthsArr){
   return activeRows(ENRICHED.filter(x=>
     (f.co==="all"||x.company===f.co)&&
     monthsArr.includes(x.month)&&
-    (f.r==="all"||x.sales_rep===f.r)&&
+    repAllowed(x,f.r)&&
     (f.ch==="all"||x.chain===f.ch)&&
     (f.cfChan==="all"||x.department===f.cfChan)&&
     (f.cfCat==="all"||x.channel===f.cfCat)&&
@@ -2580,7 +2639,7 @@ function renderBrands(){
 function repRowsIgnoringPeriod(){
   const f=otherFilterValues();
   return activeRows(ENRICHED.filter(x=>
-    (f.co==="all"||x.company===f.co)&&(f.r==="all"||x.sales_rep===f.r)&&(f.ch==="all"||x.chain===f.ch)&&
+    (f.co==="all"||x.company===f.co)&&repAllowed(x,f.r)&&(f.ch==="all"||x.chain===f.ch)&&
     (f.cfChan==="all"||x.department===f.cfChan)&&(f.cfCat==="all"||x.channel===f.cfCat)&&
     (f.cfBrand==="all"||x.brand===f.cfBrand)&&(f.cfSku==="all"||x.sku===f.cfSku)&&(f.cfStatus==="all"||x.status===f.cfStatus)
   ));
@@ -2673,7 +2732,7 @@ function percentileRank(value,values){
 function customerAllHistoryRows(){
   const f=otherFilterValues();
   return activeRows(ENRICHED.filter(x=>
-    (f.co==="all"||x.company===f.co)&&(f.r==="all"||x.sales_rep===f.r)&&(f.ch==="all"||x.chain===f.ch)&&
+    (f.co==="all"||x.company===f.co)&&repAllowed(x,f.r)&&(f.ch==="all"||x.chain===f.ch)&&
     (f.cfChan==="all"||x.department===f.cfChan)&&(f.cfCat==="all"||x.channel===f.cfCat)&&
     (f.cfBrand==="all"||x.brand===f.cfBrand)&&(f.cfSku==="all"||x.sku===f.cfSku)&&(f.cfStatus==="all"||x.status===f.cfStatus)
   ));
@@ -2770,7 +2829,108 @@ function renderCustomerIntelligence(d){
   }else document.getElementById('customer-opportunity-index').innerHTML='<div class="customer-empty-state"><strong>Coming Soon</strong><span>Se necesitan al menos dos marcas activas para medir espacio de portafolio.</span></div>';
 }
 
+let SELLER_BASIC_SORT={key:'sales',dir:'desc'};
+let SELLER_BASIC_BRAND_SORT={key:'sales',dir:'desc'};
+function sellerBasicSort(key){
+  if(SELLER_BASIC_SORT.key===key)SELLER_BASIC_SORT.dir=SELLER_BASIC_SORT.dir==='desc'?'asc':'desc';
+  else SELLER_BASIC_SORT={key,dir:'desc'};
+  renderSellerBasic();
+}
+function sellerBasicSortMark(key){
+  if(SELLER_BASIC_SORT.key!==key)return '<span class="sort-indicator">↕</span>';
+  return `<span class="sort-indicator">${SELLER_BASIC_SORT.dir==='desc'?'▼':'▲'}</span>`;
+}
+function toggleSellerBasicChain(idx){
+  const rows=document.querySelectorAll('.seller-basic-chain-detail.sb-chain-'+idx),arrow=document.getElementById('sb-arrow-'+idx);
+  const opening=[...rows].some(row=>!row.classList.contains('expanded'));rows.forEach(row=>row.classList.toggle('expanded',opening));if(arrow)arrow.textContent=opening?'▾':'▸';
+}
+function toggleSellerBasicBrand(idx){
+  const rows=document.querySelectorAll('.seller-basic-brand-detail.sb-brand-'+idx),arrow=document.getElementById('sbb-arrow-'+idx);
+  const opening=[...rows].some(row=>!row.classList.contains('expanded'));rows.forEach(row=>row.classList.toggle('expanded',opening));
+  if(!opening)document.querySelectorAll('.seller-basic-sku-detail[class*="sb-sku-'+idx+'-"]').forEach(row=>row.classList.remove('expanded'));
+  if(arrow)arrow.textContent=opening?'▾':'▸';
+}
+function toggleSellerBasicSku(brandIdx,skuIdx){
+  const rows=document.querySelectorAll('.seller-basic-sku-detail.sb-sku-'+brandIdx+'-'+skuIdx),arrow=document.getElementById('sbs-arrow-'+brandIdx+'-'+skuIdx);
+  const opening=[...rows].some(row=>!row.classList.contains('expanded'));rows.forEach(row=>row.classList.toggle('expanded',opening));if(arrow)arrow.textContent=opening?'▾':'▸';
+}
+function sellerBasicRows(){
+  const brand=document.getElementById('seller-basic-brand')?.value||'all';
+  const search=(document.getElementById('seller-basic-search')?.value||'').toLowerCase().trim();
+  const m={};
+  activeRows(FILTERED).filter(r=>brand==='all'||r.brand===brand).forEach(r=>{
+    if(!r.customer_name)return;
+    if(!m[r.customer_name])m[r.customer_name]={name:r.customer_name,chain:r.chain||'—',sales:0,cases:0,orders:new Set(),brands:new Set(),lastDate:null};
+    const c=m[r.customer_name];c.sales+=r.amount;c.cases+=r.qty;c.orders.add(r.invoice_number||r.invoice_date);if(r.brand&&r.brand!=='Unknown')c.brands.add(r.brand);
+    const dt=r.invoice_date?new Date(r.invoice_date):null;if(dt&&(!c.lastDate||dt>c.lastDate))c.lastDate=dt;
+  });
+  return Object.values(m).filter(c=>!search||`${c.name} ${c.chain}`.toLowerCase().includes(search)).map(c=>({...c,orders:c.orders.size,brands:[...c.brands].join(', ')||'—'}));
+}
+function sellerBasicHistoricalRows(){
+  const f=otherFilterValues(),brand=document.getElementById('seller-basic-brand')?.value||'all';
+  return activeRows(ENRICHED.filter(r=>(f.co==='all'||r.company===f.co)&&repAllowed(r,f.r)&&(f.ch==='all'||r.chain===f.ch)&&(f.globalDepartment==='all'||r.department===f.globalDepartment)&&(f.globalChannel==='all'||r.channel===f.globalChannel)&&(brand==='all'||r.brand===brand)));
+}
+function sellerBasicReorderMetrics(rows){
+  const byCustomer={};let latestAll=null;
+  rows.forEach(r=>{const customer=r.customer_name;if(!customer)return;const dt=r.invoice_date?new Date(r.invoice_date):null;if(!dt||Number.isNaN(dt.getTime()))return;latestAll=latestAll&&latestAll>dt?latestAll:dt;if(!byCustomer[customer])byCustomer[customer]={dates:{}};byCustomer[customer].dates[r.invoice_number||r.invoice_date]=dt;});
+  const out={};Object.entries(byCustomer).forEach(([customer,v])=>{const dates=Object.values(v.dates).sort((a,b)=>a-b),intervals=[];for(let i=1;i<dates.length;i++)intervals.push(Math.round((dates[i]-dates[i-1])/86400000));const avg=intervals.length?intervals.reduce((s,n)=>s+n,0)/intervals.length:null,last=dates[dates.length-1],since=latestAll&&last?Math.max(0,Math.round((latestAll-last)/86400000)):null,overdue=avg!==null&&since!==null?Math.max(0,Math.round(since-avg)):null;let status='Sin suficiente historial',color='var(--text3)';if(avg!==null){if(since<=avg){status='Dentro del ritmo';color='#10b981';}else if(since<=avg*1.25){status='Próxima';color='#F4C124';}else{status='Atrasado';color='#ef4444';}}out[customer]={frequency:avg===null?null:Math.round(avg),since,overdue,status,color,lastDate:last};});
+  return {out,latestAll};
+}
+function sellerBasicHeader(label,key,align=''){return `<th${align?` class="${align}"`:''} onclick="sellerBasicSort('${key}')">${label}${sellerBasicSortMark(key)}</th>`;}
+function sellerBasicBrandSort(key){
+  if(SELLER_BASIC_BRAND_SORT.key===key)SELLER_BASIC_BRAND_SORT.dir=SELLER_BASIC_BRAND_SORT.dir==='desc'?'asc':'desc';
+  else SELLER_BASIC_BRAND_SORT={key,dir:'desc'};
+  renderSellerBasic();
+}
+function sellerBasicBrandHeader(label,key,align=''){const mark=SELLER_BASIC_BRAND_SORT.key===key?`<span class="sort-indicator">${SELLER_BASIC_BRAND_SORT.dir==='desc'?'▼':'▲'}</span>`:'<span class="sort-indicator">↕</span>';return `<th${align?` class="${align}"`:''} onclick="sellerBasicBrandSort('${key}')">${label}${mark}</th>`;}
+function renderSellerBasic(){
+  const host=document.getElementById('seller-basic-view'),advanced=document.getElementById('customer-advanced-view');if(!host||!advanced)return;
+  const basic=CURRENT_ROLE==='vendedor'&&DASHBOARD_MODE==='basic';host.style.display=basic?'block':'none';advanced.style.display=basic?'none':'block';if(!basic)return;
+  const allRows=activeRows(FILTERED);
+  const brandSelect=document.getElementById('seller-basic-brand');
+  const currentBrand=brandSelect?.value||'all';const brands=[...new Set(allRows.map(r=>r.brand).filter(b=>b&&b!=='Unknown'))].sort();
+  const brandOptions=['<option value="all">Todas las marcas</option>',...brands.map(b=>`<option value="${b}">${b}</option>`)].join('');
+  const visibleBrand=currentBrand==='all'||brands.includes(currentBrand)?currentBrand:'all';
+  if(brandSelect)brandSelect.value=visibleBrand;
+  const rows=sellerBasicRows();
+  const viewRows=allRows.filter(r=>visibleBrand==='all'||r.brand===visibleBrand);
+  const historicalRows=sellerBasicHistoricalRows(),reorderMetrics=sellerBasicReorderMetrics(historicalRows);rows.forEach(c=>{c.reorder=reorderMetrics.out[c.name]||{frequency:null,since:null,overdue:null,status:'Sin suficiente historial',color:'var(--text3)'};});
+  host.innerHTML=`
+    <div class="seller-basic-head"><div><h2>Mi desempeño</h2><p>Vista básica de tus clientes, ventas y marcas. Solo incluye tu actividad.</p></div>
+      <div class="seller-basic-controls"><select id="seller-basic-brand" class="filter-select" onchange="renderSellerBasic()">${brandOptions}</select><input id="seller-basic-search" class="filter-select seller-basic-search" placeholder="Buscar cliente o cadena" onchange="renderSellerBasic()" value="${(document.getElementById('seller-basic-search')?.value||'').replace(/"/g,'&quot;')}"></div></div>
+    <div class="kpi-grid seller-basic-kpis">
+      <div class="kpi" style="--kpi-color:#34A852"><div class="kpi-label">Venta total</div><div class="kpi-value">${$(viewRows.reduce((s,r)=>s+r.amount,0))}</div></div>
+      <div class="kpi" style="--kpi-color:#6366f1"><div class="kpi-label">Cajas vendidas</div><div class="kpi-value">${viewRows.reduce((s,r)=>s+r.qty,0).toLocaleString('en-US',{maximumFractionDigits:1})}</div></div>
+      <div class="kpi" style="--kpi-color:#F4C124"><div class="kpi-label">Órdenes hechas</div><div class="kpi-value">${new Set(viewRows.map(r=>r.invoice_number||r.invoice_date)).size}</div></div>
+      <div class="kpi" style="--kpi-color:#0ea5e9"><div class="kpi-label">Clientes activos</div><div class="kpi-value">${new Set(viewRows.map(r=>r.customer_name).filter(Boolean)).size}</div></div>
+    </div>
+    <div class="seller-basic-card seller-basic-period-card"><div class="section-header"><div><div class="section-title">Performance por período</div><div class="section-sub">Evolución de tu venta, volumen y actividad. La variación compara contra el período anterior disponible.</div></div></div><div class="table-card sales-table-scroll"><table class="data-table seller-basic-table" id="seller-basic-period-table"></table></div></div>
+    <div class="seller-basic-grid">
+      <div class="seller-basic-card"><div class="section-header"><div><div class="section-title">Mis clientes</div><div class="section-sub">Agrupados por cadena. Abre una cadena para ver sus tiendas. Venta $ es el orden predeterminado; pulsa cualquier encabezado para cambiarlo.</div></div></div>
+        <div class="table-card sales-table-scroll"><table class="data-table seller-basic-table" id="seller-basic-client-table"></table></div>
+      </div>
+      <div class="seller-basic-card"><div class="section-header"><div><div class="section-title">Marcas</div><div class="section-sub">Tu mezcla de ventas por marca.</div></div></div><div class="table-card"><table class="data-table seller-basic-table" id="seller-basic-brand-table"></table></div>
+        <div class="section-header" style="margin-top:18px"><div><div class="section-title">Clientes para revisar</div><div class="section-sub">Cuentas con más días desde su última compra.</div></div></div><div id="seller-basic-review-list" class="seller-basic-list"></div>
+      </div>
+    </div>`;
+  document.getElementById('seller-basic-brand').value=visibleBrand;
+  const key=SELLER_BASIC_SORT.key,dir=SELLER_BASIC_SORT.dir;const sorted=rows.sort((a,b)=>{let av=a[key],bv=b[key];if(key==='lastDate'){av=av?.getTime()||0;bv=bv?.getTime()||0;}if(typeof av==='string')return dir==='desc'?bv.localeCompare(av):av.localeCompare(bv);return dir==='desc'?bv-av:av-bv;});
+  const chainMap={};sorted.forEach(c=>{const k=c.chain||'—';if(!chainMap[k])chainMap[k]={name:k,sales:0,cases:0,orders:0,lastDate:null,customers:[]};const g=chainMap[k];g.sales+=c.sales;g.cases+=c.cases;g.orders+=c.orders;if(c.lastDate&&(!g.lastDate||c.lastDate>g.lastDate))g.lastDate=c.lastDate;g.customers.push(c);});
+  const chainGroups=Object.values(chainMap).sort((a,b)=>{const key=SELLER_BASIC_SORT.key;let av=a[key],bv=b[key];if(key==='lastDate'){av=av?.getTime()||0;bv=bv?.getTime()||0;}if(typeof av==='string')return SELLER_BASIC_SORT.dir==='desc'?bv.localeCompare(av):av.localeCompare(bv);return SELLER_BASIC_SORT.dir==='desc'?bv-av:av-bv;});
+  const table=document.getElementById('seller-basic-client-table');
+  const chainRows=chainGroups.map((g,idx)=>{const customers=g.customers.slice().sort((a,b)=>{const key=SELLER_BASIC_SORT.key;let av=a[key],bv=b[key];if(key==='lastDate'){av=av?.getTime()||0;bv=bv?.getTime()||0;}if(typeof av==='string')return SELLER_BASIC_SORT.dir==='desc'?bv.localeCompare(av):av.localeCompare(bv);return SELLER_BASIC_SORT.dir==='desc'?bv-av:av-bv;});return `<tr class="chain-row seller-basic-chain-row" onclick="toggleSellerBasicChain(${idx})"><td><span class="chain-arrow" id="sb-arrow-${idx}">▸</span><strong>${g.name}</strong></td><td>${g.customers.length} tiendas</td><td class="r bold">${$(g.sales)}</td><td class="r">${g.cases.toLocaleString('en-US',{maximumFractionDigits:1})}</td><td class="r">${g.orders}</td><td class="r">${g.lastDate?g.lastDate.toISOString().slice(0,10):'—'}</td><td class="r">—</td><td class="r">—</td><td class="r">—</td><td class="r">—</td></tr>${customers.map(c=>`<tr class="seller-basic-chain-detail customer-detail-row sb-chain-${idx}"><td style="padding-left:34px">${c.name}</td><td>${c.chain}</td><td class="r">${$(c.sales)}</td><td class="r">${c.cases.toLocaleString('en-US',{maximumFractionDigits:1})}</td><td class="r">${c.orders}</td><td class="r">${c.lastDate?c.lastDate.toISOString().slice(0,10):'—'}</td><td class="r">${c.reorder.frequency===null?'—':c.reorder.frequency+' días'}</td><td class="r">${c.reorder.since??'—'}</td><td class="r">${c.reorder.overdue??'—'}</td><td class="r" style="color:${c.reorder.color};font-weight:700">${c.reorder.status}</td></tr>`).join('')}`;}).join('');
+  table.innerHTML=`<thead><tr>${sellerBasicHeader('Cadena / tienda','chain')}${sellerBasicHeader('Tiendas','name','r')}${sellerBasicHeader('Venta $','sales','r')}${sellerBasicHeader('Cajas','cases','r')}${sellerBasicHeader('Órdenes','orders','r')}${sellerBasicHeader('Última orden','lastDate','r')}<th class="r">Frec. promedio</th><th class="r">Días desde última</th><th class="r">Días atrasado</th><th class="r">Estado</th></tr></thead><tbody>${chainRows||`<tr><td colspan="10"><div class="seller-basic-empty">No hay clientes bajo los filtros actuales.</div></td></tr>`}</tbody>`;
+  const periodAgg={};viewRows.forEach(r=>{const dt=r.invoice_date?new Date(r.invoice_date):null;if(!dt||Number.isNaN(dt.getTime()))return;const key=`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`,orderKey=r.invoice_number||r.invoice_date;if(!periodAgg[key])periodAgg[key]={key,label:`${MN_SHORT[dt.getMonth()+1]} ${dt.getFullYear()}`,sort:dt.getTime(),sales:0,cases:0,orders:new Set(),customers:new Set(),orderSkus:{}};const p=periodAgg[key];p.sales+=r.amount;p.cases+=r.qty;p.orders.add(orderKey);if(r.customer_name)p.customers.add(r.customer_name);if(!p.orderSkus[orderKey])p.orderSkus[orderKey]=new Set();if(r.sku)p.orderSkus[orderKey].add(r.sku);});
+  const periods=Object.values(periodAgg).sort((a,b)=>a.sort-b.sort);document.getElementById('seller-basic-period-table').innerHTML=`<thead><tr><th>Período</th><th class="r">Venta $</th><th class="r">Cajas</th><th class="r">Órdenes</th><th class="r">Clientes</th><th class="r">Venta / orden</th><th class="r">SKUs / orden</th><th class="r">Δ Venta</th><th class="r">Δ Cajas</th><th class="r">Δ Órdenes</th></tr></thead><tbody>${periods.length?periods.map((p,i)=>{const prev=periods[i-1],growth=prev&&prev.sales?((p.sales/prev.sales)-1)*100:null,caseGrowth=prev&&prev.cases?((p.cases/prev.cases)-1)*100:null,orderGrowth=prev&&prev.orders.size?((p.orders.size/prev.orders.size)-1)*100:null,avgSkus=p.orders.size?Object.values(p.orderSkus).reduce((sum,skuSet)=>sum+skuSet.size,0)/p.orders.size:0,changeCell=value=>`<span style="color:${value===null?'var(--text3)':value>=0?'#10b981':'#ef4444'}">${value===null?'—':`${value>=0?'+':''}${P(value)}`}</span>`;return `<tr><td class="bold">${p.label}</td><td class="r">${$(p.sales)}</td><td class="r">${p.cases.toLocaleString('en-US',{maximumFractionDigits:1})}</td><td class="r">${p.orders.size}</td><td class="r">${p.customers.size}</td><td class="r">${$(p.orders.size?p.sales/p.orders.size:0)}</td><td class="r">${p.orders.size?avgSkus.toFixed(1):'—'}</td><td class="r">${changeCell(growth)}</td><td class="r">${changeCell(caseGrowth)}</td><td class="r">${changeCell(orderGrowth)}</td></tr>`;}).join(''):`<tr><td colspan="10"><div class="seller-basic-empty">No hay datos de período bajo los filtros actuales.</div></td></tr>`}</tbody>`;
+  const brandAgg={};viewRows.forEach(r=>{const b=r.brand||'Unknown',sku=r.sku||'—',customer=r.customer_name||'—';if(!brandAgg[b])brandAgg[b]={sales:0,cases:0,orders:new Set(),customers:new Set(),skus:{}};const v=brandAgg[b];v.sales+=r.amount;v.cases+=r.qty;v.orders.add(r.invoice_number||r.invoice_date);v.customers.add(customer);if(!v.skus[sku])v.skus[sku]={sku,sales:0,cases:0,orders:new Set(),customers:new Set(),customerRows:{}};const s=v.skus[sku];s.sales+=r.amount;s.cases+=r.qty;s.orders.add(r.invoice_number||r.invoice_date);s.customers.add(customer);if(!s.customerRows[customer])s.customerRows[customer]={name:customer,chain:r.chain||'—',sales:0,cases:0,orders:new Set(),lastDate:null};const cr=s.customerRows[customer];cr.sales+=r.amount;cr.cases+=r.qty;cr.orders.add(r.invoice_number||r.invoice_date);const dt=r.invoice_date?new Date(r.invoice_date):null;if(dt&&(!cr.lastDate||dt>cr.lastDate))cr.lastDate=dt;});
+  const brandKey=SELLER_BASIC_BRAND_SORT.key,brandDir=SELLER_BASIC_BRAND_SORT.dir;const brandValue=(v,key)=>key==='orders'?v.orders.size:key==='customers'?v.customers.size:v[key];
+  const brandRows=Object.entries(brandAgg).sort((a,b)=>{const av=brandValue(a[1],brandKey),bv=brandValue(b[1],brandKey);return brandDir==='desc'?bv-av:av-bv;});const brandMarkup=brandRows.map(([b,v],idx)=>{const skuRows=Object.values(v.skus).sort((a,b)=>{const av=brandValue(a,brandKey),bv=brandValue(b,brandKey);return brandDir==='desc'?bv-av:av-bv;});return `<tr class="chain-row seller-basic-brand-row" onclick="toggleSellerBasicBrand(${idx})"><td colspan="3"><span class="chain-arrow" id="sbb-arrow-${idx}">▸</span><strong>${b}</strong></td><td class="r bold">${$(v.sales)}</td><td class="r">${v.cases.toLocaleString('en-US',{maximumFractionDigits:1})}</td><td class="r">${v.orders.size}</td><td class="r">${v.customers.size}</td></tr>${skuRows.map((s,skuIdx)=>{const meta=SKUS[s.sku]||{},customerRows=Object.values(s.customerRows).sort((a,b)=>b.sales-a.sales);return `<tr class="seller-basic-brand-detail customer-detail-row sb-brand-${idx}" onclick="toggleSellerBasicSku(${idx},${skuIdx});event.stopPropagation()"><td style="padding-left:34px"><span class="chain-arrow" id="sbs-arrow-${idx}-${skuIdx}">▸</span>${skuPhoto(s.sku,30)}</td><td>${s.sku}</td><td>${meta.item_name||s.sku}</td><td class="r">${$(s.sales)}</td><td class="r">${s.cases.toLocaleString('en-US',{maximumFractionDigits:1})}</td><td class="r">${s.orders.size}</td><td class="r">${s.customers.size}</td></tr>${customerRows.map(c=>`<tr class="seller-basic-sku-detail customer-detail-row sb-sku-${idx}-${skuIdx}"><td style="padding-left:68px">${skuPhoto(s.sku,24)}</td><td>${c.name}</td><td>${c.chain}</td><td class="r">${$(c.sales)}</td><td class="r">${c.cases.toLocaleString('en-US',{maximumFractionDigits:1})}</td><td class="r">${c.orders.size}</td><td class="r">${c.lastDate?c.lastDate.toISOString().slice(0,10):'—'}</td></tr>`).join('')}`;}).join('')}`;}).join('');
+  document.getElementById('seller-basic-brand-table').innerHTML=`<thead><tr><th>Foto</th><th>SKU</th><th>Descripción</th>${sellerBasicBrandHeader('Venta $','sales','r')}${sellerBasicBrandHeader('Cajas','cases','r')}${sellerBasicBrandHeader('Órdenes','orders','r')}${sellerBasicBrandHeader('Clientes','customers','r')}</tr></thead><tbody>${brandMarkup||`<tr><td colspan="7"><div class="seller-basic-empty">No hay marcas disponibles.</div></td></tr>`}</tbody>`;
+  const latest=viewRows.reduce((max,r)=>{const d=r.invoice_date?new Date(r.invoice_date):null;return d&&(!max||d>max)?d:max;},null);const review=rows.filter(c=>c.lastDate&&latest).map(c=>({...c,days:Math.round((latest-c.lastDate)/86400000)})).filter(c=>c.days>=45).sort((a,b)=>b.days-a.days).slice(0,8);const reviewHost=document.getElementById('seller-basic-review-list');reviewHost.innerHTML=review.length?review.map(c=>`<div class="seller-basic-list-item"><div><strong>${c.name}</strong><span>${c.chain} · ${c.orders} órdenes</span></div><div class="r">${c.days} días</div></div>`).join(''):`<div class="seller-basic-empty">No hay clientes con 45+ días sin compra.</div>`;
+}
+
 function renderClients(){
+  if(CURRENT_ROLE==='vendedor'&&DASHBOARD_MODE==='basic'){renderSellerBasic();return;}
   const activityFilter = document.getElementById("cf-activity")?.value || "all";
   document.getElementById("cht-cat-title").textContent = activityFilter==="all" ? "Ventas por Canal ($)" : "Perdidos por Canal";
   document.getElementById("cht-chain-title").textContent = activityFilter==="all" ? "Top Cadenas por Ventas ($)" : "Perdidos por Cadena";
@@ -2793,8 +2953,11 @@ function renderClients(){
   const companyFilter=document.getElementById("f-company")?.value||"all";
   const companyCustomers=companyFilter!=="all"?(coverage.byCompany[companyFilter]?.size||0):coverage.all.size;
   const companyLabel=companyFilter!=="all"?companyFilter:"Todas las compañías";
-  const combinedCustomers=new Set([...coverage.vit,...coverage.hua]);
-  const opportunityCount=companyFilter==='Vitaplena'?[...coverage.vit].filter(name=>!coverage.hua.has(name)).length:companyFilter==='Hua Xing'?[...coverage.hua].filter(name=>!coverage.vit.has(name)).length:[...combinedCustomers].filter(name=>!coverage.shared.has(name)).length;
+  const combinedCustomers=new Set([...coverage.vit,...coverage.hua,...coverage.egg]);
+  const opportunityCount=companyFilter==='all'
+    ? [...combinedCustomers].filter(name=>(coverage.companyCountByCustomer.get(name)||0)===1).length
+    : [...(coverage.byCompany[companyFilter]||new Set())].filter(name=>(coverage.companyCountByCustomer.get(name)||0)<coverage.companies.length).length;
+  const coverageLabel=companyFilter==='all'?'Clientes que compran una sola compañía':'Clientes de esta compañía que aún no compran las otras';
 
   const cK=Object.keys(cA).filter(k=>cA[k].sales>0).sort((a,b)=>cA[b].sales-cA[a].sales);
   const chK=Object.keys(chA).filter(k=>chA[k].sales>0&&k!=='—').sort((a,b)=>chA[b].sales-chA[a].sales);
@@ -2805,8 +2968,8 @@ function renderClients(){
     <div class="kpi" style="--kpi-color:#6366f1"><div class="kpi-label">Cadenas Activas</div><div class="kpi-value">${chK.length}</div></div>
     <div class="kpi" style="--kpi-color:#F4C124"><div class="kpi-label">Clientes Activos</div><div class="kpi-value">${custK.length}</div></div>
     <div class="kpi" style="--kpi-color:#0ea5e9"><div class="kpi-label">Universo de Clientes${infoIcon("Total de clientes en public.customers. La cifra por compañía usa clientes con ventas reales registradas; las órdenes con cantidad y monto ambos en cero quedan fuera.")}</div><div class="kpi-value">${companyCustomers}</div><div class="kpi-sub">${companyLabel}</div></div>
-    <div class="kpi" style="--kpi-color:#a855f7"><div class="kpi-label">Cobertura Compartida${infoIcon("Clientes con ventas reales tanto de Vitaplena como de Hua Xing.")}</div><div class="kpi-value">${coverage.shared.size}</div><div class="kpi-sub">Clientes comprados por ambas</div></div>
-    <div class="kpi" style="--kpi-color:#f97316"><div class="kpi-label">Oportunidad entre compañías${infoIcon(companyFilter==='all'?"Clientes que compran solo una de las dos compañías; representan oportunidad de vender la otra.":"Clientes que compran la compañía seleccionada pero todavía no registran ventas de la otra compañía.")}</div><div class="kpi-value">${opportunityCount}</div><div class="kpi-sub">${companyFilter==='all'?'Compran solo una compañía':'No compran la otra compañía'}</div></div>
+    <div class="kpi" style="--kpi-color:#a855f7"><div class="kpi-label">Cobertura Compartida${infoIcon("Clientes con ventas reales en dos o más compañías. Ahora incluye Vitaplena, Hua Xing y Egg Market.")}</div><div class="kpi-value">${coverage.shared.size}</div><div class="kpi-sub">Compran 2+ compañías</div></div>
+    <div class="kpi" style="--kpi-color:#f97316"><div class="kpi-label">Oportunidad entre compañías${infoIcon(companyFilter==='all'?"Clientes que compran solo una compañía; representan oportunidad de vender las otras.":"Clientes de la compañía seleccionada que todavía no compran todas las compañías disponibles.")}</div><div class="kpi-value">${opportunityCount}</div><div class="kpi-sub">${coverageLabel}</div></div>
     <div class="kpi" style="--kpi-color:#ec4899"><div class="kpi-label">Ventas Totales</div><div class="kpi-value">${$(ts)}</div></div>
     <div class="kpi" style="--kpi-color:#10b981"><div class="kpi-label">Margen % Promedio${infoIcon("Ganancia bruta total ÷ ventas totales del canal/cadena/cliente filtrado, ponderado por venta (no es el promedio simple de los % individuales).")}</div><div class="kpi-value">${P(avgMargin)}</div></div>`;
 
@@ -3086,7 +3249,7 @@ const OPP_COLORS={reorder:'#f59e0b',winback:'#ef4444',crosssell:'#6366f1',distri
 const OPP_LABELS={reorder:'Reorder',winback:'Win Back',crosssell:'Cross-Sell',distributiongap:'Distribution Gap'};
 function opportunityHistoryRows(){
   const co=document.getElementById('f-company')?.value||'all',rep=document.getElementById('f-rep')?.value||'all',chain=document.getElementById('f-chain')?.value||'all';
-  return activeRows(ENRICHED.filter(r=>(co==='all'||r.company===co)&&(rep==='all'||r.sales_rep===rep)&&(chain==='all'||r.chain===chain)));
+  return activeRows(ENRICHED.filter(r=>(co==='all'||r.company===co)&&repAllowed(r,rep)&&(chain==='all'||r.chain===chain)));
 }
 function oppDays(a,b){return Math.max(0,Math.round((a-b)/86400000));}
 function oppMedian(arr){const a=arr.filter(Number.isFinite).sort((x,y)=>x-y);if(!a.length)return 0;const m=Math.floor(a.length/2);return a.length%2?a[m]:(a[m-1]+a[m])/2;}
@@ -3160,7 +3323,7 @@ const ACTION_PLAN_GROWTH=0.10;
 function actionPlanScopeRows(){
   const co=document.getElementById('f-company')?.value||'all',rep=document.getElementById('f-rep')?.value||'all',chain=document.getElementById('f-chain')?.value||'all';
   const dep=document.getElementById('cf-department')?.value||'all',channel=document.getElementById('cf-channel')?.value||'all',brand=document.getElementById('cf-brand')?.value||'all',sku=document.getElementById('cf-sku')?.value||'all',status=document.getElementById('cf-status')?.value||'all';
-  return activeRows(ENRICHED.filter(r=>(co==='all'||r.company===co)&&(rep==='all'||r.sales_rep===rep)&&(chain==='all'||r.chain===chain)&&(dep==='all'||r.department===dep)&&(channel==='all'||r.channel===channel)&&(brand==='all'||r.brand===brand)&&(sku==='all'||r.sku===sku)&&(status==='all'||r.status===status)));
+  return activeRows(ENRICHED.filter(r=>(co==='all'||r.company===co)&&repAllowed(r,rep)&&(chain==='all'||r.chain===chain)&&(dep==='all'||r.department===dep)&&(channel==='all'||r.channel===channel)&&(brand==='all'||r.brand===brand)&&(sku==='all'||r.sku===sku)&&(status==='all'||r.status===status)));
 }
 function actionPlanPeriod(rows){
   const dates=rows.map(r=>new Date(r.invoice_date)).filter(d=>Number.isFinite(d.getTime()));
