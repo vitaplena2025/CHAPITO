@@ -1263,7 +1263,9 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let CURRENT_USER=null;
 let CURRENT_ROLE='vendedor';
-let DASHBOARD_MODE='basic';
+// Admins y gerentes comienzan con la vista completa; los vendedores son
+// forzados a Basic por applyAccessMode() según sus permisos.
+let DASHBOARD_MODE='expert';
 let EXPERT_ACCESS=false;
 let PROFITABILITY_ACCESS=false;
 const ROLE_LABELS={admin:'Admin',gerente:'Gerente',vendedor:'Vendedor'};
