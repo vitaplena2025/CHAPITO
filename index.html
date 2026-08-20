@@ -1818,7 +1818,12 @@ function cascadeFilterOptions(){
   
   // Global filters cascade
   updateSelect("f-company",[...new Set(subsetExcept("f-company").map(r=>r.company))],"🌐 Todas las Compañías");
-  updateSelect("f-rep",[...new Set(subsetExcept("f-rep").map(r=>r.sales_rep))].filter(x=>x).sort(),"👤 Todos los reps");
+  // El selector de reps es un selector de análisis global para admins/gerentes:
+  // debe seguir mostrando todo el equipo aunque otro filtro (compañía, cadena,
+  // canal, etc.) deje temporalmente sin ventas a alguno de ellos. Para vendedores
+  // se conserva el alcance forzado a su representante asignado.
+  const repOptionRows=CURRENT_ROLE==='vendedor'?subsetExcept("f-rep"):ENRICHED;
+  updateSelect("f-rep",[...new Set(repOptionRows.map(r=>r.sales_rep))].filter(x=>x).sort(),"👤 Todos los reps");
   updateSelect("f-chain",[...new Set(subsetExcept("f-chain").map(r=>r.chain))].filter(x=>x&&x!=='—').sort(),"🏪 Todas las cadenas");
   updateSelect("cf-global-department",[...new Set(subsetExcept("cf-global-department").map(r=>r.department))].filter(x=>x).sort(),"Departamento: Todos");
   updateSelect("cf-global-channel",[...new Set(subsetExcept("cf-global-channel").map(r=>r.channel))].filter(x=>x).sort(),"Canal: Todos");
