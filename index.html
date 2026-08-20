@@ -1272,7 +1272,10 @@ const ROLE_LABELS={admin:'Admin',gerente:'Gerente',vendedor:'Vendedor'};
 function currentRole(user){
   // app_metadata es la fuente prevista para autorización. El correo de administración
   // se mantiene como fallback visual mientras terminamos de configurar ese claim en Auth.
-  const role=String(user?.app_metadata?.role||((user?.email||'').toLowerCase()==='admin@vitaplena.pr'?'admin':'vendedor')).toLowerCase();
+  const email=String(user?.email||'').trim().toLowerCase();
+  // Este correo es el administrador operativo de CHAPITO. Tiene prioridad para
+  // evitar que un claim antiguo (por ejemplo role=vendedor) limite su sesión.
+  const role=email==='admin@vitaplena.pr'?'admin':String(user?.app_metadata?.role||'vendedor').toLowerCase();
   return ROLE_LABELS[role]?role:'vendedor';
 }
 function accessProfile(user){
@@ -1551,7 +1554,16 @@ function enrichData(){
 // FILTERS
 // ============================================================
 function initFilters(){
-  const sel=(id,arr,pfx='')=>{const el=document.getElementById(id);arr.forEach(v=>{const o=document.createElement("option");o.value=v;o.textContent=(pfx||'')+v;el.appendChild(o);});};
+  const sel=(id,arr,pfx='')=>{
+    const el=document.getElementById(id);if(!el)return;
+    // Cada sesión debe comenzar sin la selección de la sesión anterior
+    // (especialmente importante al pasar de un vendedor a un admin).
+    const first=el.querySelector('option[value="all"]');
+    const firstLabel=first?.textContent||'';
+    el.innerHTML='';
+    const allOpt=document.createElement('option');allOpt.value='all';allOpt.textContent=firstLabel;el.appendChild(allOpt);
+    arr.forEach(v=>{const o=document.createElement("option");o.value=v;o.textContent=(pfx||'')+v;el.appendChild(o);});
+  };
   sel('f-company',COMPANIES);
   sel('f-rep',[...new Set(ENRICHED.map(r=>r.sales_rep))].filter(x=>x).sort());
   sel('f-chain',[...new Set(ENRICHED.map(r=>r.chain))].filter(x=>x&&x!=='—').sort());
