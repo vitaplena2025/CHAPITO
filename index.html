@@ -290,6 +290,8 @@ body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',-app
 }
 .filter-reset:hover{border-color:var(--red);color:var(--red);}
 .access-controls{display:flex;align-items:center;gap:8px;margin-left:auto;}
+.demo-mode-toggle{display:none;border:1px solid #f4c124;background:rgba(244,193,36,.1);color:#f4c124;border-radius:8px;padding:6px 9px;font:inherit;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;}
+.demo-mode-toggle.active{background:#f4c124;color:#17130a;}
 .mode-label{font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.08em;}
 .mode-toggle{display:inline-flex;padding:3px;border:1px solid var(--border-strong);border-radius:9px;background:var(--surface2);}
 .mode-toggle button{border:0;background:transparent;color:var(--text3);padding:6px 10px;border-radius:6px;font:inherit;font-size:11px;font-weight:700;cursor:pointer;}
@@ -571,6 +573,7 @@ body.expert-mode [data-mode="expert"]{display:flex!important;}
       <button id="mode-basic" type="button" onclick="setDashboardMode('basic')">Basic</button>
       <button id="mode-expert" type="button" onclick="setDashboardMode('expert')">Expert</button>
     </div>
+    <button id="demo-seller-toggle" class="demo-mode-toggle" type="button" onclick="toggleDemoSellerMode()">🎭 Demo vendedor</button>
     <span id="role-access-note" class="role-access-note"></span>
     <button class="filter-reset" onclick="resetFilters()">✕ Limpiar</button>
   </div>
@@ -1266,6 +1269,7 @@ let CURRENT_ROLE='vendedor';
 // Admins y gerentes comienzan con la vista completa; los vendedores son
 // forzados a Basic por applyAccessMode() según sus permisos.
 let DASHBOARD_MODE='expert';
+let DEMO_SELLER_MODE=false;
 let EXPERT_ACCESS=false;
 let PROFITABILITY_ACCESS=false;
 const ROLE_LABELS={admin:'Admin',gerente:'Gerente',vendedor:'Vendedor'};
@@ -1290,7 +1294,11 @@ function assignedSalesRep(){
 function repAllowed(row,selectedRep='all'){
   const assigned=assignedSalesRep();
   if(CURRENT_ROLE==='vendedor')return Boolean(assigned)&&row.sales_rep===assigned;
+  if(CURRENT_ROLE==='admin'&&DEMO_SELLER_MODE)return true;
   return selectedRep==='all'||row.sales_rep===selectedRep;
+}
+function isSellerBasicView(){
+  return (CURRENT_ROLE==='vendedor'&&DASHBOARD_MODE==='basic')||(CURRENT_ROLE==='admin'&&DEMO_SELLER_MODE);
 }
 function enforceSellerRepFilter(){
   const select=document.getElementById('f-rep');
@@ -1309,21 +1317,34 @@ function applyProfitabilityVisibility(){
 }
 function applyAccessMode(){
   const expertButton=document.getElementById('mode-expert');
-  if(expertButton)expertButton.disabled=!EXPERT_ACCESS;
+  if(expertButton)expertButton.disabled=!EXPERT_ACCESS||DEMO_SELLER_MODE;
+  if(CURRENT_ROLE==='admin'&&DEMO_SELLER_MODE)DASHBOARD_MODE='basic';
   if(!EXPERT_ACCESS)DASHBOARD_MODE='basic';
   document.body.classList.toggle('expert-mode',DASHBOARD_MODE==='expert');
   document.getElementById('mode-basic')?.classList.toggle('active',DASHBOARD_MODE==='basic');
   document.getElementById('mode-expert')?.classList.toggle('active',DASHBOARD_MODE==='expert');
-  const note=document.getElementById('role-access-note');if(note)note.textContent=`${ROLE_LABELS[CURRENT_ROLE]} · ${PROFITABILITY_ACCESS?'Rentabilidad autorizada':'Vista comercial'}`;
-  const customerTabLabel=document.querySelector('#tab-nav-customers .tab-label');if(customerTabLabel)customerTabLabel.textContent=CURRENT_ROLE==='vendedor'&&DASHBOARD_MODE==='basic'?'Mi desempeño':'Clientes';
+  const demoButton=document.getElementById('demo-seller-toggle');if(demoButton){demoButton.style.display=CURRENT_ROLE==='admin'?'inline-block':'none';demoButton.classList.toggle('active',DEMO_SELLER_MODE);demoButton.setAttribute('aria-pressed',String(DEMO_SELLER_MODE));}
+  const note=document.getElementById('role-access-note');if(note)note.textContent=`${ROLE_LABELS[CURRENT_ROLE]} · ${DEMO_SELLER_MODE?'Demo vendedor · Toda la data':PROFITABILITY_ACCESS?'Rentabilidad autorizada':'Vista comercial'}`;
+  const customerTabLabel=document.querySelector('#tab-nav-customers .tab-label');if(customerTabLabel)customerTabLabel.textContent=isSellerBasicView()?'Mi desempeño':'Clientes';
   applyProfitabilityVisibility();
   const activeExpert=document.querySelector('.tab.active[data-mode="expert"]');if(activeExpert&&DASHBOARD_MODE!=='expert')showTab('overview');
 }
 function setDashboardMode(mode){
+  if(DEMO_SELLER_MODE&&mode==='expert')return;
   if(mode==='expert'&&!EXPERT_ACCESS)return;
   DASHBOARD_MODE=mode==='expert'?'expert':'basic';
   applyAccessMode();
   renderAll();
+}
+function toggleDemoSellerMode(){
+  if(CURRENT_ROLE!=='admin')return;
+  DEMO_SELLER_MODE=!DEMO_SELLER_MODE;
+  if(DEMO_SELLER_MODE){
+    const rep=document.getElementById('f-rep');if(rep)rep.value='all';
+  }else if(EXPERT_ACCESS)DASHBOARD_MODE='expert';
+  applyAccessMode();
+  applyFilters();
+  if(DEMO_SELLER_MODE)showTab('customers');
 }
 function showAuth(message){
   document.getElementById('loading').style.display='none';
@@ -1333,6 +1354,7 @@ function showAuth(message){
 }
 function showDashboard(user){
   CURRENT_USER=user;
+  DEMO_SELLER_MODE=false;
   const profile=accessProfile(user);CURRENT_ROLE=profile.role;EXPERT_ACCESS=profile.expert;PROFITABILITY_ACCESS=profile.profit;
   document.getElementById('auth-screen').style.display='none';
   document.getElementById('loading').style.display='none';
@@ -2904,7 +2926,7 @@ function sellerBasicBrandSort(key){
 function sellerBasicBrandHeader(label,key,align=''){const mark=SELLER_BASIC_BRAND_SORT.key===key?`<span class="sort-indicator">${SELLER_BASIC_BRAND_SORT.dir==='desc'?'▼':'▲'}</span>`:'<span class="sort-indicator">↕</span>';return `<th${align?` class="${align}"`:''} onclick="sellerBasicBrandSort('${key}')">${label}${mark}</th>`;}
 function renderSellerBasic(){
   const host=document.getElementById('seller-basic-view'),advanced=document.getElementById('customer-advanced-view');if(!host||!advanced)return;
-  const basic=CURRENT_ROLE==='vendedor'&&DASHBOARD_MODE==='basic';host.style.display=basic?'block':'none';advanced.style.display=basic?'none':'block';if(!basic)return;
+  const basic=isSellerBasicView();host.style.display=basic?'block':'none';advanced.style.display=basic?'none':'block';if(!basic)return;
   const allRows=activeRows(FILTERED);
   const brandSelect=document.getElementById('seller-basic-brand');
   const currentBrand=brandSelect?.value||'all';const brands=[...new Set(allRows.map(r=>r.brand).filter(b=>b&&b!=='Unknown'))].sort();
@@ -2915,7 +2937,7 @@ function renderSellerBasic(){
   const viewRows=allRows.filter(r=>visibleBrand==='all'||r.brand===visibleBrand);
   const historicalRows=sellerBasicHistoricalRows(),reorderMetrics=sellerBasicReorderMetrics(historicalRows);rows.forEach(c=>{c.reorder=reorderMetrics.out[c.name]||{frequency:null,since:null,overdue:null,status:'Sin suficiente historial',color:'var(--text3)'};});
   host.innerHTML=`
-    <div class="seller-basic-head"><div><h2>Mi desempeño</h2><p>Vista básica de tus clientes, ventas y marcas. Solo incluye tu actividad.</p></div>
+    <div class="seller-basic-head"><div><h2>${DEMO_SELLER_MODE?'Demo · Vista de vendedor':'Mi desempeño'}</h2><p>${DEMO_SELLER_MODE?'La misma vista Basic de un vendedor, consolidada con la data de todos los vendedores.':'Vista básica de tus clientes, ventas y marcas. Solo incluye tu actividad.'}</p></div>
       <div class="seller-basic-controls"><select id="seller-basic-brand" class="filter-select" onchange="renderSellerBasic()">${brandOptions}</select><input id="seller-basic-search" class="filter-select seller-basic-search" placeholder="Buscar cliente o cadena" onchange="renderSellerBasic()" value="${(document.getElementById('seller-basic-search')?.value||'').replace(/"/g,'&quot;')}"></div></div>
     <div class="kpi-grid seller-basic-kpis">
       <div class="kpi" style="--kpi-color:#34A852"><div class="kpi-label">Venta total</div><div class="kpi-value">${$(viewRows.reduce((s,r)=>s+r.amount,0))}</div></div>
@@ -2925,7 +2947,7 @@ function renderSellerBasic(){
     </div>
     <div class="seller-basic-card seller-basic-period-card"><div class="section-header"><div><div class="section-title">Performance por período</div><div class="section-sub">Evolución de tu venta, volumen y actividad. La variación compara contra el período anterior disponible.</div></div></div><div class="table-card sales-table-scroll"><table class="data-table seller-basic-table" id="seller-basic-period-table"></table></div></div>
     <div class="seller-basic-grid">
-      <div class="seller-basic-card"><div class="section-header"><div><div class="section-title">Mis clientes</div><div class="section-sub">Agrupados por cadena. Abre una cadena para ver sus tiendas. Venta $ es el orden predeterminado; pulsa cualquier encabezado para cambiarlo.</div></div></div>
+      <div class="seller-basic-card"><div class="section-header"><div><div class="section-title">${DEMO_SELLER_MODE?'Clientes':'Mis clientes'}</div><div class="section-sub">Agrupados por cadena. Abre una cadena para ver sus tiendas. Venta $ es el orden predeterminado; pulsa cualquier encabezado para cambiarlo.</div></div></div>
         <div class="table-card sales-table-scroll"><table class="data-table seller-basic-table" id="seller-basic-client-table"></table></div>
       </div>
       <div class="seller-basic-card"><div class="section-header"><div><div class="section-title">Marcas</div><div class="section-sub">Tu mezcla de ventas por marca.</div></div></div><div class="table-card"><table class="data-table seller-basic-table" id="seller-basic-brand-table"></table></div>
@@ -2949,7 +2971,7 @@ function renderSellerBasic(){
 }
 
 function renderClients(){
-  if(CURRENT_ROLE==='vendedor'&&DASHBOARD_MODE==='basic'){renderSellerBasic();return;}
+  if(isSellerBasicView()){renderSellerBasic();return;}
   const activityFilter = document.getElementById("cf-activity")?.value || "all";
   document.getElementById("cht-cat-title").textContent = activityFilter==="all" ? "Ventas por Canal ($)" : "Perdidos por Canal";
   document.getElementById("cht-chain-title").textContent = activityFilter==="all" ? "Top Cadenas por Ventas ($)" : "Perdidos por Cadena";
